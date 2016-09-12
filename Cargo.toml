@@ -1,0 +1,24 @@
+[package]
+name = "nuklear-rust"
+version = "0.1.0"
+authors = ["plyhuns"]
+
+description = "Bindings to vurtun/nuklear"
+homepage = "https://github.com/snuk182/nuklear-rust"
+repository = "https://github.com/snuk182/nuklear-rust"
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "nuklear_rust"
+path = "src/lib.rs"
+
+[dependencies]
+libc = "*"
+log = "*"
+
+[dependencies.nuklear-sys]
+path = "nuklear-sys"
+
+[build-dependencies]
+gcc = "*"
+
