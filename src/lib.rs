@@ -8,7 +8,7 @@ extern crate alloc;
 use std::default::Default;
 use std::os::raw::*;
 use std::borrow::Cow;
-use std::ffi::CString;
+use std::fmt::{Debug, Formatter};
 
 use nuklear_sys::*;
 
@@ -32,6 +32,8 @@ pub use nuklear_sys::nk_widget_layout_states as NkWidgetLayoutState;
 pub use nuklear_sys::nk_draw_list_stroke as NkDrawListStroke;
 pub use nuklear_sys::nk_anti_aliasing as NkAntiAliasing;
 pub use nuklear_sys::nk_allocation_type as NkAllocationType;
+pub use nuklear_sys::nk_draw_vertex_layout_attribute as NkDrawVertexLayoutAttribute;
+pub use nuklear_sys::nk_draw_vertex_layout_format as NkDrawVertexLayoutFormat;
 
 pub use nuklear_sys::nk_panel_flags as NkPanelFlags;
 pub use nuklear_sys::nk_text_alignment as NkTextAlignment;
@@ -233,9 +235,10 @@ impl<'a> From<&'a [&'a str]> for NkStringArray<'a> {
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum NkHandleKind {
-	Empty, Ptr, Id
+	Empty, Ptr, Id, Unknown,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct NkHandle {
 	kind: NkHandleKind,
 	internal: nk_handle
@@ -257,7 +260,7 @@ impl NkHandle {
 	
 	pub fn id(&mut self) -> Option<i32> {
 		match self.kind {
-			NkHandleKind::Id => {
+			NkHandleKind::Id | NkHandleKind::Unknown => {
 				Some(unsafe { *(self.internal.id()) } )
 			},
 			_ => {
@@ -268,7 +271,7 @@ impl NkHandle {
 	
 	pub fn ptr(&mut self) -> Option<*mut c_void> {
 		match self.kind {
-			NkHandleKind::Ptr => {
+			NkHandleKind::Ptr | NkHandleKind::Unknown => {
 				Some(unsafe { *(self.internal.ptr()) } )
 			},
 			_ => {
@@ -418,9 +421,38 @@ impl NkInput {
 
 //=====================================================================
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct NkDrawCommand {
 	internal: *const nk_draw_command,
+}
+
+impl Debug for NkDrawCommand {
+    fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
+        unsafe { (*self.internal).fmt(f) }
+    }
+}
+
+impl NkDrawCommand {
+	pub fn clip_rect(&self) -> NkRect {
+		unsafe {
+			(*self.internal).clip_rect
+		}
+	}
+	
+	pub fn elem_count(&self) -> u32 {
+		unsafe {
+			(*self.internal).elem_count
+		}
+	}
+	
+	pub fn texture(&self) -> NkHandle {
+		NkHandle {
+			kind: NkHandleKind::Unknown,
+			internal: unsafe {
+				(*self.internal).texture
+			}
+		}
+	}
 }
 
 //=====================================================================
@@ -773,8 +805,69 @@ pub struct NkConvertConfig {
 impl Default for NkConvertConfig {
 	fn default() -> Self {
 		NkConvertConfig {
-			internal: nk_convert_config::default(),
+			internal: nk_convert_config {
+				vertex_alignment: ALIGNMENT,
+				..Default::default()
+			}
 		}
+	}
+}
+
+impl NkConvertConfig {
+	pub fn set_global_alpha(&mut self, val: f32) {
+		self.internal.global_alpha = val;
+	}
+    pub fn set_line_aa(&mut self, val: NkAntiAliasing) {
+    	self.internal.line_AA = val;
+    }
+    pub fn set_shape_aa(&mut self, val: NkAntiAliasing) {
+    	self.internal.shape_AA = val;
+    }
+    pub fn set_circle_segment_count(&mut self, val: u32) {
+    	self.internal.circle_segment_count = val;
+    }
+    pub fn set_arc_segment_count(&mut self, val: u32) {
+    	self.internal.arc_segment_count = val;
+    }
+    pub fn set_curve_segment_count(&mut self, val: u32) {
+    	self.internal.curve_segment_count = val;
+    }
+    pub fn set_null(&mut self, val: NkDrawNullTexture) {
+    	self.internal.null = val.internal;
+    }
+    pub fn set_vertex_layout(&mut self, val: &NkDrawVertexLayoutElements) {
+    	self.internal.vertex_layout = &val.arr.as_slice()[0];
+    }
+    pub fn set_vertex_size(&mut self, val: usize) {
+    	self.internal.vertex_size = val;
+    }
+    /*pub fn set_vertex_alignment(&mut self, val: usize) {
+    	self.internal.vertex_alignment = val;
+    }*/
+}
+
+//============================================================================================
+
+pub struct NkDrawVertexLayoutElements {
+	arr: Vec<nk_draw_vertex_layout_element>
+}
+
+impl NkDrawVertexLayoutElements {
+	pub fn new(var: &[(NkDrawVertexLayoutAttribute, NkDrawVertexLayoutFormat, u32)]) -> NkDrawVertexLayoutElements {
+		let mut m = NkDrawVertexLayoutElements {
+			arr: Vec::with_capacity(var.len()),
+		};
+		
+		for v in var {
+			let &(a, f, o) = v;
+			m.arr.push(nk_draw_vertex_layout_element {
+				attribute: a,
+				format: f,
+				offset: o as usize,
+			});
+		}
+		
+		m
 	}
 }
 
@@ -1036,6 +1129,7 @@ impl NkFontAtlas {
 		}
 	}
 	
+	#[allow(dead_code)]
 	fn init_custom(&mut self, persistent: &mut NkAllocator, transient: &mut NkAllocator) {
 		unsafe {
 			nk_font_atlas_init_custom(&mut self.internal as *mut nk_font_atlas, &mut persistent.internal as *mut nk_allocator, &mut transient.internal as *mut nk_allocator);
@@ -1075,6 +1169,7 @@ enum NkFontAtlasState {
 
 //=============================================================================================
 
+#[derive(Clone, Debug)]
 pub struct NkDrawNullTexture {
 	internal: nk_draw_null_texture,
 }
@@ -1113,6 +1208,16 @@ impl NkBuffer {
 		
 		unsafe {
 			nk_buffer_init(&mut a.internal as *mut nk_buffer, &mut alloc.internal as *const nk_allocator, buffer_size);
+		}
+		
+		a
+	}
+	
+	pub fn with_fixed(memory: &mut [u8]) -> NkBuffer {
+		let mut a = NkBuffer::default();
+		
+		unsafe {
+			nk_buffer_init_fixed(&mut a.internal as *mut nk_buffer, memory as *mut _ as *mut ::std::os::raw::c_void, memory.len());
 		}
 		
 		a
@@ -1545,21 +1650,18 @@ impl NkContext {
 	}
 	
 	pub fn text_colored(&mut self, text: &str, flags: NkFlags, color: NkColor) {
-		let t = text;
 		unsafe {
 			nk_text_colored(&mut self.internal as *mut nk_context, text.as_ptr() as *const i8, text.as_bytes().len() as i32, flags, color);
 		}
 	}
 		
 	pub fn text_wrap(&mut self, text: &str) {
-		let t = text;
 		unsafe {
 			nk_text_wrap(&mut self.internal as *mut nk_context, text.as_ptr() as *const i8, text.as_bytes().len() as i32);
 		}
 	}
 	
 	pub fn text_wrap_colored(&mut self, text: &str, color: NkColor) {
-		let t = text;
 		unsafe {
 			nk_text_wrap_colored(&mut self.internal as *mut nk_context, text.as_ptr() as *const i8, text.as_bytes().len() as i32, color);
 		}
@@ -2369,10 +2471,105 @@ impl NkContext {
     		Some(NkCommand::new(r))
     	}
     }
+    
+    pub fn draw_command_iterator<'a>(&'a mut self, buf: &'a mut NkBuffer) -> NkDrawCommandIterator<'a> {
+    	NkDrawCommandIterator {
+    		ctx: self,
+    		buf: buf,
+    	}
+    }
+    
+    pub fn command_iterator<'a>(&'a mut self) -> NkCommandIterator<'a> {
+    	NkCommandIterator {
+    		ctx: self,
+    	}
+    }
+}
+
+//============================================================================================
+
+pub struct NkCommandIterator<'a> {
+	ctx: &'a mut NkContext,
+}
+
+impl <'a> IntoIterator for NkCommandIterator<'a> {
+    type Item = NkCommand;
+    type IntoIter = NkCommandIntoIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+    	let cmd = self.ctx.begin_cmd();
+        NkCommandIntoIter { 
+        	ctx: self.ctx,
+        	cmd: cmd,
+        }
+    }
+}
+
+pub struct NkCommandIntoIter<'a> {
+    ctx: &'a mut NkContext,
+    cmd: Option<NkCommand>,
+}
+
+impl <'a> Iterator for NkCommandIntoIter<'a> {
+    type Item = NkCommand;
+    fn next(&mut self) -> Option<NkCommand> {
+    	let r = self.cmd.clone();
+        
+        self.cmd = if let Some(ref p) = self.cmd {
+        	self.ctx.next_cmd(p)
+        } else {
+	        None
+        };
+        
+        r
+    }
+}
+
+//============================================================================================
+
+pub struct NkDrawCommandIterator<'a> {
+	ctx: &'a mut NkContext,
+	buf: &'a mut NkBuffer,
+}
+
+impl <'a> IntoIterator for NkDrawCommandIterator<'a> {
+    type Item = NkDrawCommand;
+    type IntoIter = NkDrawCommandIntoIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+    	let cmd = self.ctx.draw_begin(self.buf);
+        NkDrawCommandIntoIter { 
+        	ctx: self.ctx,
+        	buf: self.buf,
+        	cmd: cmd,
+        }
+    }
+}
+
+pub struct NkDrawCommandIntoIter<'a> {
+    ctx: &'a mut NkContext,
+    buf: &'a mut NkBuffer,
+    cmd: Option<NkDrawCommand>,
+}
+
+impl <'a> Iterator for NkDrawCommandIntoIter<'a> {
+    type Item = NkDrawCommand;
+    fn next(&mut self) -> Option<NkDrawCommand> {
+    	let r = self.cmd.clone();
+        
+        self.cmd = if let Some(ref p) = self.cmd {
+        	self.ctx.draw_next(p, self.buf)
+        } else {
+	        None
+        };
+        
+        r
+    }
 }
 
 //=============================================================================================
 
+#[allow(dead_code)]
 pub struct NkWindow {
 	internal: *mut nk_window,
 }
@@ -2425,6 +2622,7 @@ impl NkPanelRef {
 
 //=============================================================================================
 
+#[derive(Clone)]
 pub struct NkCommand {
 	internal: *const nk_command,
 }
@@ -2435,6 +2633,12 @@ impl NkCommand {
 			internal: i,
 		}
 	}
+}
+
+impl Debug for NkCommand {
+    fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
+        unsafe { (*self.internal).fmt(f) }
+    }
 }
 
 //=============================================================================================
@@ -2710,7 +2914,7 @@ pub struct NkImage {
 }
 
 impl NkImage {
-	pub fn id(id: i32) -> NkImage {
+	pub fn with_id(id: i32) -> NkImage {
 		NkImage {
 			internal: unsafe {
 				nk_image_id(id)
@@ -2718,12 +2922,20 @@ impl NkImage {
 		}
 	}
 	
-	pub fn ptr(ptr: *mut c_void) -> NkImage {
+	pub fn with_ptr(ptr: *mut c_void) -> NkImage {
 		NkImage {
 			internal: unsafe {
 				nk_image_ptr(ptr)
 			}
 		}
+	}
+	
+	pub fn id(&mut self) -> i32 {
+		unsafe { *(self.internal.handle.id()) }
+	}
+	
+	pub fn ptr(&mut self) -> *mut c_void {
+		unsafe { *(self.internal.handle.ptr()) }
 	}
 }
 
@@ -2845,24 +3057,28 @@ const ALIGNMENT: usize = 16;
 use alloc::heap;
 use std::mem;
 
-unsafe extern "C" fn alloc_rust(_: nk_handle, old: *mut c_void, size: nk_size) -> *mut c_void {
+unsafe extern "C" fn alloc_rust(_: nk_handle, _: *mut c_void, size: nk_size) -> *mut c_void {
 	trace!("allocating {} bytes", size);
 		
     let size_size = mem::size_of::<nk_size>();
     let size = size + size_size;
 
-    let memory = if old.is_null() {
+    /*let memory = if old.is_null() {
         trace!("allocating {} / {} bytes", size_size, size);
 		heap::allocate(size, ALIGNMENT)
     } else {
         trace!("reallocating {} / {} bytes", size_size, size);
 		let old = old as *mut u8;
         let old = old.offset(-(size_size as isize));
-        let old_size = *(old as *const usize);
+        let old_size = *(old as *const nk_size);
         heap::reallocate(old, old_size, size, ALIGNMENT)
-    };
+    };*/
+    
+    let memory = heap::allocate(size, ALIGNMENT);
+    trace!("allocating {} / {} bytes", size_size, size);		
     
     *(memory as *mut nk_size) = size;
+    trace!("allocated {} bytes at {:p}", size, memory);
     memory.offset(size_size as isize) as *mut c_void
 }
 
@@ -2878,15 +3094,15 @@ unsafe extern "C" fn free_rust(_: nk_handle, old: *mut c_void) {
     let old = old.offset(-(size_size as isize));
     let old_size = *(old as *const nk_size);
 
-    trace!("deallocating {} bytes", old_size);
+    trace!("deallocating {} bytes from {:p}", old_size, old);
 	
 	heap::deallocate(old as *mut u8, old_size, ALIGNMENT);
 }
 
-unsafe extern "C" fn alloc_rust_hacky(hnd: nk_handle, old: *mut c_void, size: nk_size) -> *mut c_void {
-	if old.is_null() {
+unsafe extern "C" fn alloc_rust_hacky(_: nk_handle, _: *mut c_void, size: nk_size) -> *mut c_void {
+	/*if old.is_null() {
 		free_rust_hacky(hnd, old);
-	}
+	}*/
 	
 	trace!("allocating {} bytes", size);
 	let size_size = mem::size_of::<nk_size>();
@@ -2936,15 +3152,15 @@ mod tests {
     	let mut h = nk_handle::default();
     	
     	unsafe {
-    		println!("allocating 100500");
+    		trace!("allocating 100500");
 	    	let mut mem = allo.internal.alloc.unwrap()(h, ::std::ptr::null_mut(), 100500);
-	    	println!("freeing 100500");
+	    	trace!("freeing 100500");
 	    	allo.internal.free.unwrap()(h, mem);
     	}
     }
     
     #[test]
     fn it_works() {
-    	println!("size {}", ((::std::mem::size_of::<nk_window>() / ::std::mem::size_of::<nk_uint>()) / 2));
+    	trace!("size {}", ((::std::mem::size_of::<nk_window>() / ::std::mem::size_of::<nk_uint>()) / 2));
     }
 }
