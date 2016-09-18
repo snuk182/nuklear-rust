@@ -32,16 +32,27 @@ pub type intptr_t = isize;
 pub type uintptr_t = usize;
 pub type intmax_t = ::std::os::raw::c_longlong;
 pub type uintmax_t = ::std::os::raw::c_ulonglong;
+pub type nk_char = int8_t;
+pub type nk_uchar = uint8_t;
+pub type nk_byte = uint8_t;
 pub type nk_short = int16_t;
 pub type nk_ushort = uint16_t;
 pub type nk_int = int32_t;
 pub type nk_uint = uint32_t;
-pub type nk_hash = uint32_t;
 pub type nk_size = uintptr_t;
 pub type nk_ptr = uintptr_t;
-pub type nk_flags = uint32_t;
-pub type nk_rune = uint32_t;
-pub type nk_byte = uint8_t;
+pub type nk_hash = nk_uint;
+pub type nk_flags = nk_uint;
+pub type nk_rune = nk_uint;
+pub type _dummy_array0 = [::std::os::raw::c_char; 1usize];
+pub type _dummy_array1 = [::std::os::raw::c_char; 1usize];
+pub type _dummy_array2 = [::std::os::raw::c_char; 1usize];
+pub type _dummy_array3 = [::std::os::raw::c_char; 1usize];
+pub type _dummy_array4 = [::std::os::raw::c_char; 1usize];
+pub type _dummy_array5 = [::std::os::raw::c_char; 1usize];
+pub type _dummy_array6 = [::std::os::raw::c_char; 1usize];
+pub type _dummy_array7 = [::std::os::raw::c_char; 1usize];
+pub type _dummy_array8 = [::std::os::raw::c_char; 1usize];
 #[derive(Copy, Clone)]
 #[repr(i32)]
 #[derive(Debug)]
@@ -294,10 +305,10 @@ pub enum nk_symbol_type {
     NK_SYMBOL_NONE = 0,
     NK_SYMBOL_X = 1,
     NK_SYMBOL_UNDERSCORE = 2,
-    NK_SYMBOL_CIRCLE = 3,
-    NK_SYMBOL_CIRCLE_FILLED = 4,
-    NK_SYMBOL_RECT = 5,
-    NK_SYMBOL_RECT_FILLED = 6,
+    NK_SYMBOL_CIRCLE_SOLID = 3,
+    NK_SYMBOL_CIRCLE_OUTLINE = 4,
+    NK_SYMBOL_RECT_SOLID = 5,
+    NK_SYMBOL_RECT_OUTLINE = 6,
     NK_SYMBOL_TRIANGLE_UP = 7,
     NK_SYMBOL_TRIANGLE_DOWN = 8,
     NK_SYMBOL_TRIANGLE_LEFT = 9,
@@ -1141,7 +1152,7 @@ pub struct nk_input {
 impl ::std::default::Default for nk_input {
     fn default() -> Self { unsafe { ::std::mem::zeroed() } }
 }
-pub type nk_draw_index = ::std::os::raw::c_ushort;
+pub type nk_draw_index = nk_ushort;
 #[derive(Copy, Clone)]
 #[repr(i32)]
 #[derive(Debug)]
@@ -1636,6 +1647,7 @@ pub struct nk_style_window {
     pub fixed_background: nk_style_item,
     pub background: nk_color,
     pub border_color: nk_color,
+    pub popup_border_color: nk_color,
     pub combo_border_color: nk_color,
     pub contextual_border_color: nk_color,
     pub menu_border_color: nk_color,
@@ -1648,6 +1660,7 @@ pub struct nk_style_window {
     pub menu_border: f32,
     pub group_border: f32,
     pub tooltip_border: f32,
+    pub popup_border: f32,
     pub rounding: f32,
     pub spacing: nk_vec2,
     pub scrollbar_size: nk_vec2,
@@ -1692,6 +1705,26 @@ pub struct nk_style {
 }
 impl ::std::default::Default for nk_style {
     fn default() -> Self { unsafe { ::std::mem::zeroed() } }
+}
+#[derive(Copy, Clone)]
+#[repr(i32)]
+#[derive(Debug)]
+pub enum nk_panel_type {
+    NK_PANEL_WINDOW = 1,
+    NK_PANEL_GROUP = 2,
+    NK_PANEL_POPUP = 4,
+    NK_PANEL_CONTEXTUAL = 16,
+    NK_PANEL_COMBO = 32,
+    NK_PANEL_MENU = 64,
+    NK_PANEL_TOOLTIP = 128,
+}
+#[derive(Copy, Clone)]
+#[repr(i32)]
+#[derive(Debug)]
+pub enum nk_panel_set {
+    NK_PANEL_SET_NONBLOCK = 240,
+    NK_PANEL_SET_POPUP = 244,
+    NK_PANEL_SET_SUB = 246,
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -1773,6 +1806,7 @@ impl ::std::default::Default for nk_menu_state {
 #[derive(Copy, Clone)]
 #[derive(Debug)]
 pub struct nk_panel {
+    pub type_: nk_panel_type,
     pub flags: nk_flags,
     pub bounds: nk_rect,
     pub offset: *mut nk_scroll,
@@ -1794,38 +1828,32 @@ pub struct nk_panel {
 impl ::std::default::Default for nk_panel {
     fn default() -> Self { unsafe { ::std::mem::zeroed() } }
 }
+pub const NK_WINDOW_DYNAMIC: nk_window_flags =
+    nk_window_flags::NK_WINDOW_PRIVATE;
 #[derive(Copy, Clone)]
 #[repr(i32)]
 #[derive(Debug)]
 pub enum nk_window_flags {
-    NK_WINDOW_PRIVATE = 512,
-    NK_WINDOW_DYNAMIC = 1024,
+    NK_WINDOW_PRIVATE = 1024,
     NK_WINDOW_ROM = 2048,
     NK_WINDOW_HIDDEN = 4096,
     NK_WINDOW_CLOSED = 8192,
     NK_WINDOW_MINIMIZED = 16384,
-    NK_WINDOW_SUB = 32768,
-    NK_WINDOW_GROUP = 65536,
-    NK_WINDOW_POPUP = 131072,
-    NK_WINDOW_NONBLOCK = 262144,
-    NK_WINDOW_CONTEXTUAL = 524288,
-    NK_WINDOW_COMBO = 1048576,
-    NK_WINDOW_MENU = 2097152,
-    NK_WINDOW_TOOLTIP = 4194304,
-    NK_WINDOW_REMOVE_ROM = 8388608,
+    NK_WINDOW_REMOVE_ROM = 32768,
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
 #[derive(Debug)]
 pub struct nk_popup_state {
     pub win: *mut nk_window,
-    pub type_: nk_window_flags,
+    pub type_: nk_panel_type,
     pub name: nk_hash,
     pub active: ::std::os::raw::c_int,
     pub combo_count: ::std::os::raw::c_uint,
     pub con_count: ::std::os::raw::c_uint,
     pub con_old: ::std::os::raw::c_uint,
     pub active_con: ::std::os::raw::c_uint,
+    pub header: nk_rect,
 }
 impl ::std::default::Default for nk_popup_state {
     fn default() -> Self { unsafe { ::std::mem::zeroed() } }
@@ -2056,8 +2084,8 @@ impl ::std::default::Default for nk_configuration_stacks {
 #[derive(Copy)]
 pub struct nk_table {
     pub seq: ::std::os::raw::c_uint,
-    pub keys: [nk_hash; 50usize],
-    pub values: [nk_uint; 50usize],
+    pub keys: [nk_hash; 52usize],
+    pub values: [nk_uint; 52usize],
     pub next: *mut nk_table,
     pub prev: *mut nk_table,
 }
@@ -2070,7 +2098,7 @@ impl ::std::default::Default for nk_table {
 #[repr(C)]
 #[derive(Copy)]
 pub struct nk_page_data {
-    pub _bindgen_data_: [u64; 53usize],
+    pub _bindgen_data_: [u64; 55usize],
 }
 impl nk_page_data {
     pub unsafe fn tbl(&mut self) -> *mut nk_table {
@@ -2265,6 +2293,8 @@ extern "C" {
     pub fn nk_layout_space_rect_to_local(arg1: *mut nk_context, arg2: nk_rect)
      -> nk_rect;
     pub fn nk_layout_ratio_from_pixel(arg1: *mut nk_context, pixel_width: f32)
+     -> f32;
+    pub fn nk_layout_pixel_from_ratio(arg1: *mut nk_context, ratio: f32)
      -> f32;
     pub fn nk_group_begin(arg1: *mut nk_context, arg2: *mut nk_panel,
                           title: *const ::std::os::raw::c_char,
@@ -2466,32 +2496,32 @@ extern "C" {
                            arg3: nk_color_format) -> nk_color;
     pub fn nk_color_pick(arg1: *mut nk_context, arg2: *mut nk_color,
                          arg3: nk_color_format) -> ::std::os::raw::c_int;
-    pub fn nk_property_int(layout: *mut nk_context,
+    pub fn nk_property_int(arg1: *mut nk_context,
                            name: *const ::std::os::raw::c_char,
                            min: ::std::os::raw::c_int,
                            val: *mut ::std::os::raw::c_int,
                            max: ::std::os::raw::c_int,
                            step: ::std::os::raw::c_int, inc_per_pixel: f32);
-    pub fn nk_property_float(layout: *mut nk_context,
+    pub fn nk_property_float(arg1: *mut nk_context,
                              name: *const ::std::os::raw::c_char, min: f32,
                              val: *mut f32, max: f32, step: f32,
                              inc_per_pixel: f32);
-    pub fn nk_property_double(layout: *mut nk_context,
+    pub fn nk_property_double(arg1: *mut nk_context,
                               name: *const ::std::os::raw::c_char, min: f64,
                               val: *mut f64, max: f64, step: f64,
                               inc_per_pixel: f32);
-    pub fn nk_propertyi(layout: *mut nk_context,
+    pub fn nk_propertyi(arg1: *mut nk_context,
                         name: *const ::std::os::raw::c_char,
                         min: ::std::os::raw::c_int,
                         val: ::std::os::raw::c_int,
                         max: ::std::os::raw::c_int,
                         step: ::std::os::raw::c_int, inc_per_pixel: f32)
      -> ::std::os::raw::c_int;
-    pub fn nk_propertyf(layout: *mut nk_context,
+    pub fn nk_propertyf(arg1: *mut nk_context,
                         name: *const ::std::os::raw::c_char, min: f32,
                         val: f32, max: f32, step: f32, inc_per_pixel: f32)
      -> f32;
-    pub fn nk_propertyd(layout: *mut nk_context,
+    pub fn nk_propertyd(arg1: *mut nk_context,
                         name: *const ::std::os::raw::c_char, min: f64,
                         val: f64, max: f64, step: f64, inc_per_pixel: f32)
      -> f64;
@@ -2550,8 +2580,7 @@ extern "C" {
                     items: *mut *const ::std::os::raw::c_char,
                     count: ::std::os::raw::c_int,
                     selected: ::std::os::raw::c_int,
-                    item_height: ::std::os::raw::c_int,
-                    max_height: ::std::os::raw::c_int)
+                    item_height: ::std::os::raw::c_int, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_combo_separator(arg1: *mut nk_context,
                               items_separated_by_separator:
@@ -2560,15 +2589,13 @@ extern "C" {
                               selected: ::std::os::raw::c_int,
                               count: ::std::os::raw::c_int,
                               item_height: ::std::os::raw::c_int,
-                              max_height: ::std::os::raw::c_int)
-     -> ::std::os::raw::c_int;
+                              size: nk_vec2) -> ::std::os::raw::c_int;
     pub fn nk_combo_string(arg1: *mut nk_context,
                            items_separated_by_zeros:
                                *const ::std::os::raw::c_char,
                            selected: ::std::os::raw::c_int,
                            count: ::std::os::raw::c_int,
-                           item_height: ::std::os::raw::c_int,
-                           max_height: ::std::os::raw::c_int)
+                           item_height: ::std::os::raw::c_int, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_combo_callback(arg1: *mut nk_context,
                              item_getter:
@@ -2582,21 +2609,19 @@ extern "C" {
                              selected: ::std::os::raw::c_int,
                              count: ::std::os::raw::c_int,
                              item_height: ::std::os::raw::c_int,
-                             max_height: ::std::os::raw::c_int)
-     -> ::std::os::raw::c_int;
+                             size: nk_vec2) -> ::std::os::raw::c_int;
     pub fn nk_combobox(arg1: *mut nk_context,
                        items: *mut *const ::std::os::raw::c_char,
                        count: ::std::os::raw::c_int,
                        selected: *mut ::std::os::raw::c_int,
-                       item_height: ::std::os::raw::c_int,
-                       max_height: ::std::os::raw::c_int);
+                       item_height: ::std::os::raw::c_int, size: nk_vec2);
     pub fn nk_combobox_string(arg1: *mut nk_context,
                               items_separated_by_zeros:
                                   *const ::std::os::raw::c_char,
                               selected: *mut ::std::os::raw::c_int,
                               count: ::std::os::raw::c_int,
                               item_height: ::std::os::raw::c_int,
-                              max_height: ::std::os::raw::c_int);
+                              size: nk_vec2);
     pub fn nk_combobox_separator(arg1: *mut nk_context,
                                  items_separated_by_separator:
                                      *const ::std::os::raw::c_char,
@@ -2604,7 +2629,7 @@ extern "C" {
                                  selected: *mut ::std::os::raw::c_int,
                                  count: ::std::os::raw::c_int,
                                  item_height: ::std::os::raw::c_int,
-                                 max_height: ::std::os::raw::c_int);
+                                 size: nk_vec2);
     pub fn nk_combobox_callback(arg1: *mut nk_context,
                                 item_getter:
                                     ::std::option::Option<unsafe extern "C" fn(arg1:
@@ -2617,54 +2642,45 @@ extern "C" {
                                 selected: *mut ::std::os::raw::c_int,
                                 count: ::std::os::raw::c_int,
                                 item_height: ::std::os::raw::c_int,
-                                max_height: ::std::os::raw::c_int);
+                                size: nk_vec2);
     pub fn nk_combo_begin_text(arg1: *mut nk_context, arg2: *mut nk_panel,
                                selected: *const ::std::os::raw::c_char,
-                               arg3: ::std::os::raw::c_int,
-                               max_height: ::std::os::raw::c_int)
+                               arg3: ::std::os::raw::c_int, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_combo_begin_label(arg1: *mut nk_context, arg2: *mut nk_panel,
                                 selected: *const ::std::os::raw::c_char,
-                                max_height: ::std::os::raw::c_int)
-     -> ::std::os::raw::c_int;
+                                size: nk_vec2) -> ::std::os::raw::c_int;
     pub fn nk_combo_begin_color(arg1: *mut nk_context, arg2: *mut nk_panel,
-                                color: nk_color,
-                                max_height: ::std::os::raw::c_int)
+                                color: nk_color, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_combo_begin_symbol(arg1: *mut nk_context, arg2: *mut nk_panel,
-                                 arg3: nk_symbol_type,
-                                 max_height: ::std::os::raw::c_int)
+                                 arg3: nk_symbol_type, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_combo_begin_symbol_label(arg1: *mut nk_context,
                                        arg2: *mut nk_panel,
                                        selected:
                                            *const ::std::os::raw::c_char,
-                                       arg3: nk_symbol_type,
-                                       height: ::std::os::raw::c_int)
+                                       arg3: nk_symbol_type, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_combo_begin_symbol_text(arg1: *mut nk_context,
                                       arg2: *mut nk_panel,
                                       selected: *const ::std::os::raw::c_char,
                                       arg3: ::std::os::raw::c_int,
-                                      arg4: nk_symbol_type,
-                                      height: ::std::os::raw::c_int)
+                                      arg4: nk_symbol_type, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_combo_begin_image(arg1: *mut nk_context, arg2: *mut nk_panel,
-                                img: nk_image,
-                                max_height: ::std::os::raw::c_int)
+                                img: nk_image, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_combo_begin_image_label(arg1: *mut nk_context,
                                       arg2: *mut nk_panel,
                                       selected: *const ::std::os::raw::c_char,
-                                      arg3: nk_image,
-                                      height: ::std::os::raw::c_int)
+                                      arg3: nk_image, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_combo_begin_image_text(arg1: *mut nk_context,
                                      arg2: *mut nk_panel,
                                      selected: *const ::std::os::raw::c_char,
                                      arg3: ::std::os::raw::c_int,
-                                     arg4: nk_image,
-                                     height: ::std::os::raw::c_int)
+                                     arg4: nk_image, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_combo_item_label(arg1: *mut nk_context,
                                arg2: *const ::std::os::raw::c_char,
@@ -2739,43 +2755,44 @@ extern "C" {
     pub fn nk_menubar_begin(arg1: *mut nk_context);
     pub fn nk_menubar_end(arg1: *mut nk_context);
     pub fn nk_menu_begin_text(arg1: *mut nk_context, arg2: *mut nk_panel,
-                              arg3: *const ::std::os::raw::c_char,
-                              arg4: ::std::os::raw::c_int, align: nk_flags,
-                              width: f32) -> ::std::os::raw::c_int;
+                              title: *const ::std::os::raw::c_char,
+                              title_len: ::std::os::raw::c_int,
+                              align: nk_flags, size: nk_vec2)
+     -> ::std::os::raw::c_int;
     pub fn nk_menu_begin_label(arg1: *mut nk_context, arg2: *mut nk_panel,
                                arg3: *const ::std::os::raw::c_char,
-                               align: nk_flags, width: f32)
+                               align: nk_flags, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_menu_begin_image(arg1: *mut nk_context, arg2: *mut nk_panel,
                                arg3: *const ::std::os::raw::c_char,
-                               arg4: nk_image, width: f32)
+                               arg4: nk_image, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_menu_begin_image_text(arg1: *mut nk_context,
                                     arg2: *mut nk_panel,
                                     arg3: *const ::std::os::raw::c_char,
                                     arg4: ::std::os::raw::c_int,
                                     align: nk_flags, arg5: nk_image,
-                                    width: f32) -> ::std::os::raw::c_int;
+                                    size: nk_vec2) -> ::std::os::raw::c_int;
     pub fn nk_menu_begin_image_label(arg1: *mut nk_context,
                                      arg2: *mut nk_panel,
                                      arg3: *const ::std::os::raw::c_char,
                                      align: nk_flags, arg4: nk_image,
-                                     width: f32) -> ::std::os::raw::c_int;
+                                     size: nk_vec2) -> ::std::os::raw::c_int;
     pub fn nk_menu_begin_symbol(arg1: *mut nk_context, arg2: *mut nk_panel,
                                 arg3: *const ::std::os::raw::c_char,
-                                arg4: nk_symbol_type, width: f32)
+                                arg4: nk_symbol_type, size: nk_vec2)
      -> ::std::os::raw::c_int;
     pub fn nk_menu_begin_symbol_text(arg1: *mut nk_context,
                                      arg2: *mut nk_panel,
                                      arg3: *const ::std::os::raw::c_char,
                                      arg4: ::std::os::raw::c_int,
                                      align: nk_flags, arg5: nk_symbol_type,
-                                     width: f32) -> ::std::os::raw::c_int;
+                                     size: nk_vec2) -> ::std::os::raw::c_int;
     pub fn nk_menu_begin_symbol_label(arg1: *mut nk_context,
                                       arg2: *mut nk_panel,
                                       arg3: *const ::std::os::raw::c_char,
                                       align: nk_flags, arg4: nk_symbol_type,
-                                      width: f32) -> ::std::os::raw::c_int;
+                                      size: nk_vec2) -> ::std::os::raw::c_int;
     pub fn nk_menu_item_text(arg1: *mut nk_context,
                              arg2: *const ::std::os::raw::c_char,
                              arg3: ::std::os::raw::c_int, align: nk_flags)
@@ -2808,6 +2825,12 @@ extern "C" {
     pub fn nk_convert(arg1: *mut nk_context, cmds: *mut nk_buffer,
                       vertices: *mut nk_buffer, elements: *mut nk_buffer,
                       arg2: *const nk_convert_config);
+    pub fn nk__draw_begin(arg1: *const nk_context, arg2: *const nk_buffer)
+     -> *const nk_draw_command;
+    pub fn nk__draw_end(arg1: *const nk_context, arg2: *const nk_buffer)
+     -> *const nk_draw_command;
+    pub fn nk__draw_next(arg1: *const nk_draw_command, arg2: *const nk_buffer,
+                         arg3: *const nk_context) -> *const nk_draw_command;
     pub fn nk_input_begin(arg1: *mut nk_context);
     pub fn nk_input_motion(arg1: *mut nk_context, x: ::std::os::raw::c_int,
                            y: ::std::os::raw::c_int);
@@ -2859,6 +2882,8 @@ extern "C" {
     pub fn nk_widget_bounds(arg1: *mut nk_context) -> nk_rect;
     pub fn nk_widget_position(arg1: *mut nk_context) -> nk_vec2;
     pub fn nk_widget_size(arg1: *mut nk_context) -> nk_vec2;
+    pub fn nk_widget_width(arg1: *mut nk_context) -> f32;
+    pub fn nk_widget_height(arg1: *mut nk_context) -> f32;
     pub fn nk_widget_is_hovered(arg1: *mut nk_context)
      -> ::std::os::raw::c_int;
     pub fn nk_widget_is_mouse_clicked(arg1: *mut nk_context, arg2: nk_buttons)
@@ -3290,7 +3315,7 @@ extern "C" {
                               config: *const nk_convert_config,
                               cmds: *mut nk_buffer, vertices: *mut nk_buffer,
                               elements: *mut nk_buffer);
-    pub fn nk_draw_list_clear(arg1: *mut nk_draw_list);
+    pub fn nk_draw_list_clear(list: *mut nk_draw_list);
     pub fn nk__draw_list_begin(arg1: *const nk_draw_list,
                                arg2: *const nk_buffer)
      -> *const nk_draw_command;
@@ -3298,10 +3323,9 @@ extern "C" {
                               arg2: *const nk_buffer,
                               arg3: *const nk_draw_list)
      -> *const nk_draw_command;
-    pub fn nk__draw_begin(arg1: *const nk_context, arg2: *const nk_buffer)
+    pub fn nk__draw_list_end(arg1: *const nk_draw_list,
+                             arg2: *const nk_buffer)
      -> *const nk_draw_command;
-    pub fn nk__draw_next(arg1: *const nk_draw_command, arg2: *const nk_buffer,
-                         arg3: *const nk_context) -> *const nk_draw_command;
     pub fn nk_draw_list_path_clear(arg1: *mut nk_draw_list);
     pub fn nk_draw_list_path_line_to(list: *mut nk_draw_list, pos: nk_vec2);
     pub fn nk_draw_list_path_arc_to_fast(arg1: *mut nk_draw_list,

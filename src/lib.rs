@@ -34,6 +34,7 @@ pub use nuklear_sys::nk_anti_aliasing as NkAntiAliasing;
 pub use nuklear_sys::nk_allocation_type as NkAllocationType;
 pub use nuklear_sys::nk_draw_vertex_layout_attribute as NkDrawVertexLayoutAttribute;
 pub use nuklear_sys::nk_draw_vertex_layout_format as NkDrawVertexLayoutFormat;
+pub use nuklear_sys::nk_edit_types as NkEditType;
 
 pub use nuklear_sys::nk_panel_flags as NkPanelFlags;
 pub use nuklear_sys::nk_text_alignment as NkTextAlignment;
@@ -1313,9 +1314,9 @@ impl NkContext {
 		}
 	}
 	
-	pub fn begin(&mut self, panel: &mut NkPanel, title: NkString, bounds: NkRect, flags: NkFlags) -> i32 {
+	pub fn begin(&mut self, panel: &mut NkPanel, title: NkString, bounds: NkRect, flags: NkFlags) -> bool {
 		unsafe {
-			nk_begin(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), bounds, flags)
+			nk_begin(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), bounds, flags) != 0
 		}
 	}
 	
@@ -1995,52 +1996,52 @@ impl NkContext {
     	}
     }
     
-    pub fn combo(&mut self, items: &mut NkStringArray, selected: i32, item_height: i32, max_height: i32) -> i32 {
+    pub fn combo(&mut self, items: &mut NkStringArray, selected: i32, item_height: i32, size: NkVec2) -> i32 {
     	unsafe {
-    		nk_combo(&mut self.internal as *mut nk_context, items.as_mut(), items.len() as i32, selected, item_height, max_height)
+    		nk_combo(&mut self.internal as *mut nk_context, items.as_mut(), items.len() as i32, selected, item_height, size)
     	}
     }
     
-    pub fn combo_separator(&mut self, items_separated_by_separator: NkString, separator: char, selected: i32, item_height: i32, max_height: i32) -> i32 {
+    pub fn combo_separator(&mut self, items_separated_by_separator: NkString, separator: char, selected: i32, item_height: i32, size: NkVec2) -> i32 {
     	let len = String::from_utf8_lossy(items_separated_by_separator.bytes.as_ref()).as_ref().split(separator).count();
     	unsafe {
-    		nk_combo_separator(&mut self.internal as *mut nk_context, items_separated_by_separator.as_ptr(), separator as i32, selected, len as i32, item_height, max_height)
+    		nk_combo_separator(&mut self.internal as *mut nk_context, items_separated_by_separator.as_ptr(), separator as i32, selected, len as i32, item_height, size)
     	}
     }
     
-    pub fn combo_begin_label(&mut self, panel: &mut NkPanel, selected: NkString, max_height: i32) -> bool {
+    pub fn combo_begin_label(&mut self, panel: &mut NkPanel, selected: NkString, size: NkVec2) -> bool {
     	unsafe {
-    		nk_combo_begin_label(&mut self.internal as *mut nk_context, &mut panel.internal, selected.as_ptr(), max_height) > 0
+    		nk_combo_begin_label(&mut self.internal as *mut nk_context, &mut panel.internal, selected.as_ptr(), size) > 0
     	}
     }
     
-    pub fn combo_begin_color(&mut self, panel: &mut NkPanel, color: NkColor, max_height: i32) -> bool {
+    pub fn combo_begin_color(&mut self, panel: &mut NkPanel, color: NkColor, size: NkVec2) -> bool {
     	unsafe {
-    		nk_combo_begin_color(&mut self.internal as *mut nk_context, &mut panel.internal, color, max_height) > 0
+    		nk_combo_begin_color(&mut self.internal as *mut nk_context, &mut panel.internal, color, size) > 0
     	}
     }
     
-    pub fn combo_begin_symbol(&mut self, panel: &mut NkPanel, sym: NkSymbolType, max_height: i32) -> bool {
+    pub fn combo_begin_symbol(&mut self, panel: &mut NkPanel, sym: NkSymbolType, size: NkVec2) -> bool {
     	unsafe {
-    		nk_combo_begin_symbol(&mut self.internal as *mut nk_context, &mut panel.internal, sym, max_height) > 0
+    		nk_combo_begin_symbol(&mut self.internal as *mut nk_context, &mut panel.internal, sym, size) > 0
     	}
     }
     
-    pub fn combo_begin_symbol_label(&mut self, panel: &mut NkPanel, label: NkString, sym: NkSymbolType, max_height: i32) -> bool {
+    pub fn combo_begin_symbol_label(&mut self, panel: &mut NkPanel, label: NkString, sym: NkSymbolType, size: NkVec2) -> bool {
     	unsafe {
-    		nk_combo_begin_symbol_label(&mut self.internal as *mut nk_context, &mut panel.internal, label.as_ptr(), sym, max_height) > 0
+    		nk_combo_begin_symbol_label(&mut self.internal as *mut nk_context, &mut panel.internal, label.as_ptr(), sym, size) > 0
     	}
     }
     
-    pub fn combo_begin_image(&mut self, panel: &mut NkPanel, img: NkImage, max_height: i32) -> bool {
+    pub fn combo_begin_image(&mut self, panel: &mut NkPanel, img: NkImage, size: NkVec2) -> bool {
     	unsafe {
-    		nk_combo_begin_image(&mut self.internal as *mut nk_context, &mut panel.internal, img.internal, max_height) > 0
+    		nk_combo_begin_image(&mut self.internal as *mut nk_context, &mut panel.internal, img.internal, size) > 0
     	}
     }
     
-    pub fn combo_begin_image_label(&mut self, panel: &mut NkPanel, label: NkString, img: NkImage, max_height: i32) -> bool {
+    pub fn combo_begin_image_label(&mut self, panel: &mut NkPanel, label: NkString, img: NkImage, size: NkVec2) -> bool {
     	unsafe {
-    		nk_combo_begin_image_label(&mut self.internal as *mut nk_context, &mut panel.internal, label.as_ptr(), img.internal, max_height) > 0
+    		nk_combo_begin_image_label(&mut self.internal as *mut nk_context, &mut panel.internal, label.as_ptr(), img.internal, size) > 0
     	}
     }
     
@@ -2140,33 +2141,33 @@ impl NkContext {
     	}
     }
     
-    pub fn menu_begin_label(&mut self, panel: &mut NkPanel, title: NkString, align: NkFlags, width: f32) -> bool {
+    pub fn menu_begin_label(&mut self, panel: &mut NkPanel, title: NkString, align: NkFlags, size: NkVec2) -> bool {
     	unsafe {
-    		nk_menu_begin_label(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), align, width) > 0
+    		nk_menu_begin_label(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), align, size) > 0
     	}
     }
     
-    pub fn menu_begin_image(&mut self, panel: &mut NkPanel, title: NkString, img: NkImage, width: f32) -> bool {
+    pub fn menu_begin_image(&mut self, panel: &mut NkPanel, title: NkString, img: NkImage, size: NkVec2) -> bool {
     	unsafe {
-    		nk_menu_begin_image(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), img.internal, width) > 0
+    		nk_menu_begin_image(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), img.internal, size) > 0
     	}
     }
     
-    pub fn menu_begin_image_label(&mut self, panel: &mut NkPanel, title: NkString, align: NkFlags, img: NkImage, width: f32) -> bool {
+    pub fn menu_begin_image_label(&mut self, panel: &mut NkPanel, title: NkString, align: NkFlags, img: NkImage, size: NkVec2) -> bool {
     	unsafe {
-    		nk_menu_begin_image_label(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), align, img.internal, width) > 0
+    		nk_menu_begin_image_label(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), align, img.internal, size) > 0
     	}
     }
     
-    pub fn menu_begin_symbol(&mut self, panel: &mut NkPanel, title: NkString, sym: NkSymbolType, width: f32) -> bool {
+    pub fn menu_begin_symbol(&mut self, panel: &mut NkPanel, title: NkString, sym: NkSymbolType, size: NkVec2) -> bool {
     	unsafe {
-    		nk_menu_begin_symbol(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), sym, width) > 0
+    		nk_menu_begin_symbol(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), sym, size) > 0
     	}
     }
     
-    pub fn menu_begin_symbol_label(&mut self, panel: &mut NkPanel, title: NkString, align: NkFlags, sym: NkSymbolType, width: f32) -> bool {
+    pub fn menu_begin_symbol_label(&mut self, panel: &mut NkPanel, title: NkString, align: NkFlags, sym: NkSymbolType, size: NkVec2) -> bool {
     	unsafe {
-    		nk_menu_begin_symbol_label(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), align, sym, width) > 0
+    		nk_menu_begin_symbol_label(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), align, sym, size) > 0
     	}
     }
     
@@ -2398,6 +2399,17 @@ impl NkContext {
     pub fn widget_size(&mut self) -> NkVec2 {
     	unsafe {
     		nk_widget_size(&mut self.internal as *mut nk_context)
+    	}
+    }
+    
+    pub fn widget_width(&mut self) -> f32 {
+    	unsafe {
+    		nk_widget_width(&mut self.internal as *mut nk_context)
+     	}
+    }
+    pub fn widget_height(&mut self) -> f32 {
+    	unsafe {
+    		nk_widget_height(&mut self.internal as *mut nk_context)
     	}
     }
     
