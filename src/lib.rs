@@ -807,7 +807,7 @@ impl Default for NkConvertConfig {
 	fn default() -> Self {
 		NkConvertConfig {
 			internal: nk_convert_config {
-				vertex_alignment: ALIGNMENT,
+				//vertex_alignment: ALIGNMENT,
 				..Default::default()
 			}
 		}
@@ -1079,7 +1079,7 @@ impl NkFontAtlas {
 	    self.add_font_with_config(&cfg)
 	}
 	
-	pub fn bake(&mut self, format: NkFontAtlasFormat) -> (Vec<u8>, usize, usize) {
+	pub fn bake(&mut self, format: NkFontAtlasFormat) -> (Vec<u8>, u32, u32) {
 		let mut width: i32 = 0;
 		let mut height: i32 = 0;
 		
@@ -1088,7 +1088,7 @@ impl NkFontAtlas {
 		};
 		
 		if width < 1 || height < 1 {
-			return (vec![], width as usize, height as usize);
+			return (vec![], width as u32, height as u32);
 		}
 		
 		let size = (match format {
@@ -1102,8 +1102,8 @@ impl NkFontAtlas {
 			unsafe { 
 				Vec::from_raw_parts(image as *mut u8, size, size) 
 			}, 
-			width as usize, 
-			height as usize
+			width as u32, 
+			height as u32
 		)
 	}
 	
@@ -1734,9 +1734,21 @@ impl NkContext {
 	  	}
 	}
 	
+	pub fn button_symbol_text(&mut self, ty: NkSymbolType, title: &str, text_alignment: NkFlags) -> bool {
+	  	unsafe {
+	  		nk_button_symbol_text(&mut self.internal as *mut nk_context, ty, title.as_ptr() as *const i8, title.as_bytes().len() as i32, text_alignment) != 0
+	  	}
+	}
+	
 	pub fn button_image_label(&mut self, img: NkImage, title: NkString, text_alignment: NkFlags) -> bool {
 		unsafe {
 			nk_button_image_label(&mut self.internal as *mut nk_context, img.internal, title.as_ptr(), text_alignment) != 0
+		}
+	}
+	
+	pub fn button_image_text(&mut self, img: NkImage, title: &str, text_alignment: NkFlags) -> bool {
+		unsafe {
+			nk_button_image_text(&mut self.internal as *mut nk_context, img.internal, title.as_ptr() as *const i8, title.as_bytes().len() as i32, text_alignment) != 0
 		}
 	}
 	
@@ -1764,9 +1776,21 @@ impl NkContext {
 		}
 	}
 	
+	pub fn check_text(&mut self, title: &str, active: bool) -> i32 {
+		unsafe {
+			nk_check_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, if active { 1 } else { 0 })
+		}
+	}
+	
 	pub fn check_flags_label(&mut self, title: NkString, flags: u32, value: u32) -> u32 {
 		unsafe {
 			nk_check_flags_label(&mut self.internal as *mut nk_context, title.as_ptr(), flags, value)
+		}
+	}
+	
+	pub fn check_flags_text(&mut self, title: &str, flags: u32, value: u32) -> u32 {
+		unsafe {
+			nk_check_flags_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, flags, value)
 		}
 	}
 	
@@ -1780,9 +1804,25 @@ impl NkContext {
 		r
 	}
 	
+	pub fn checkbox_text(&mut self, title: &str, active: &mut bool) -> bool {
+		let mut i = if *active { 1 } else { 0 };
+		let r = unsafe {
+			nk_checkbox_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, &mut i as *mut i32) != 0
+		};
+		
+		*active = i != 0;
+		r
+	}
+	
 	pub fn checkbox_flags_label(&mut self, title: NkString, flags: &mut u32, value: u32) -> bool {
 		unsafe {
 			nk_checkbox_flags_label(&mut self.internal as *mut nk_context, title.as_ptr(), flags, value) != 0
+		}
+	}
+	
+	pub fn checkbox_flags_text(&mut self, title: &str, flags: &mut u32, value: u32) -> bool {
+		unsafe {
+			nk_checkbox_flags_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, flags, value) != 0
 		}
 	}
 	
@@ -1796,9 +1836,25 @@ impl NkContext {
 		r
 	}
 	
+	pub fn radio_text(&mut self, title: &str, active: &mut bool) -> bool {
+		let mut i = if *active { 1 } else { 0 };
+		let r = unsafe {
+			nk_radio_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, &mut i as *mut i32) != 0
+		};
+		
+		*active = i != 0;
+		r
+	}
+	
 	pub fn option_label(&mut self, title: NkString, active: bool) -> bool {
 		unsafe {
 			nk_option_label(&mut self.internal as *mut nk_context, title.as_ptr(), if active { 1 } else { 0 }) > 0
+		}
+	}
+	
+	pub fn option_text(&mut self, title: &str, active: bool) -> bool {
+		unsafe {
+			nk_option_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, if active { 1 } else { 0 }) > 0
 		}
 	}
 	
@@ -1808,9 +1864,21 @@ impl NkContext {
 		}
 	}
 	
+	pub fn selectable_text(&mut self, title: &str, align: NkFlags, value: &mut i32) -> bool {
+		unsafe {
+			nk_selectable_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, align, value) != 0
+		}
+	}
+	
 	pub fn selectable_image_label(&mut self, img: NkImage, title: NkString, align: NkFlags, value: &mut i32) -> bool {
 		unsafe {
 			nk_selectable_image_label(&mut self.internal as *mut nk_context, img.internal, title.as_ptr(), align, value) != 0
+		}
+	}
+	
+	pub fn selectable_image_text(&mut self, img: NkImage, title: &str, align: NkFlags, value: &mut i32) -> bool {
+		unsafe {
+			nk_selectable_image_text(&mut self.internal as *mut nk_context, img.internal, title.as_ptr() as *const i8, title.as_bytes().len() as i32, align, value) != 0
 		}
 	}
 	
@@ -1820,9 +1888,21 @@ impl NkContext {
 		}
 	}
 	
+	pub fn select_text(&mut self, title: &str, align: NkFlags, value: i32) -> i32 {
+		unsafe {
+			nk_select_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, align, value) 
+		}
+	}
+	
 	pub fn select_image_label(&mut self, img: NkImage, title: NkString, align: NkFlags, value: i32) -> i32 {
 		unsafe {
 			nk_select_image_label(&mut self.internal as *mut nk_context, img.internal, title.as_ptr(), align, value) 
+		}
+	}
+	
+	pub fn select_image_text(&mut self, img: NkImage, title: &str, align: NkFlags, value: i32) -> i32 {
+		unsafe {
+			nk_select_image_text(&mut self.internal as *mut nk_context, img.internal, title.as_ptr() as *const i8, title.as_bytes().len() as i32, align, value) 
 		}
 	}
 	
@@ -2015,6 +2095,12 @@ impl NkContext {
     	}
     }
     
+    pub fn combo_begin_text(&mut self, panel: &mut NkPanel, selected: &str, size: NkVec2) -> bool {
+    	unsafe {
+    		nk_combo_begin_text(&mut self.internal as *mut nk_context, &mut panel.internal, selected.as_ptr() as *const i8, selected.as_bytes().len() as i32, size) > 0
+    	}
+    }
+    
     pub fn combo_begin_color(&mut self, panel: &mut NkPanel, color: NkColor, size: NkVec2) -> bool {
     	unsafe {
     		nk_combo_begin_color(&mut self.internal as *mut nk_context, &mut panel.internal, color, size) > 0
@@ -2033,6 +2119,12 @@ impl NkContext {
     	}
     }
     
+    pub fn combo_begin_symbol_text(&mut self, panel: &mut NkPanel, label: &str, sym: NkSymbolType, size: NkVec2) -> bool {
+    	unsafe {
+    		nk_combo_begin_symbol_text(&mut self.internal as *mut nk_context, &mut panel.internal, label.as_ptr() as *const i8, label.as_bytes().len() as i32, sym, size) > 0
+    	}
+    }
+    
     pub fn combo_begin_image(&mut self, panel: &mut NkPanel, img: NkImage, size: NkVec2) -> bool {
     	unsafe {
     		nk_combo_begin_image(&mut self.internal as *mut nk_context, &mut panel.internal, img.internal, size) > 0
@@ -2045,9 +2137,21 @@ impl NkContext {
     	}
     }
     
+    pub fn combo_begin_image_text(&mut self, panel: &mut NkPanel, label: &str, img: NkImage, size: NkVec2) -> bool {
+    	unsafe {
+    		nk_combo_begin_image_text(&mut self.internal as *mut nk_context, &mut panel.internal, label.as_ptr() as *const i8, label.as_bytes().len() as i32, img.internal, size) > 0
+    	}
+    }
+    
     pub fn combo_item_label(&mut self, label: NkString, alignment: NkFlags) -> bool {
     	unsafe {
     		nk_combo_item_label(&mut self.internal as *mut nk_context, label.as_ptr(), alignment) > 0
+    	}
+    }
+    
+    pub fn combo_item_text(&mut self, label: &str, alignment: NkFlags) -> bool {
+    	unsafe {
+    		nk_combo_item_text(&mut self.internal as *mut nk_context, label.as_ptr() as *const i8, label.as_bytes().len() as i32, alignment) > 0
     	}
     }
     
@@ -2057,9 +2161,21 @@ impl NkContext {
     	}
     }
     
+    pub fn combo_item_image_text(&mut self, img: NkImage, label: &str, alignment: NkFlags) -> bool {
+    	unsafe {
+    		nk_combo_item_image_text(&mut self.internal as *mut nk_context, img.internal, label.as_ptr() as *const i8, label.as_bytes().len() as i32, alignment) > 0
+    	}
+    }
+    
     pub fn combo_item_symbol_label(&mut self, sym: NkSymbolType, label: NkString, alignment: NkFlags) -> bool {
     	unsafe {
     		nk_combo_item_symbol_label(&mut self.internal as *mut nk_context, sym, label.as_ptr(), alignment) > 0
+    	}
+    }
+    
+    pub fn combo_item_symbol_text(&mut self, sym: NkSymbolType, label: &str, alignment: NkFlags) -> bool {
+    	unsafe {
+    		nk_combo_item_symbol_text(&mut self.internal as *mut nk_context, sym, label.as_ptr() as *const i8, label.as_bytes().len() as i32, alignment) > 0
     	}
     }
     
@@ -2087,15 +2203,33 @@ impl NkContext {
     	}
     }
     
+    pub fn contextual_item_text(&mut self, label: &str, align: NkFlags) -> bool {
+    	unsafe {
+    		nk_contextual_item_text(&mut self.internal as *mut nk_context, label.as_ptr() as *const i8, label.as_bytes().len() as i32, align) > 0
+    	}
+    }
+    
     pub fn contextual_item_image_label(&mut self, img: NkImage, label: NkString, align: NkFlags) -> bool {
     	unsafe {
     		nk_contextual_item_image_label(&mut self.internal as *mut nk_context, img.internal, label.as_ptr(), align) > 0
     	}
     }
     
+    pub fn contextual_item_image_text(&mut self, img: NkImage, label: &str, align: NkFlags) -> bool {
+    	unsafe {
+    		nk_contextual_item_image_text(&mut self.internal as *mut nk_context, img.internal, label.as_ptr() as *const i8, label.as_bytes().len() as i32, align) > 0
+    	}
+    }
+    
     pub fn contextual_item_symbol_label(&mut self, sym: NkSymbolType, label: NkString, align: NkFlags) -> bool {
     	unsafe {
     		nk_contextual_item_symbol_label(&mut self.internal as *mut nk_context, sym, label.as_ptr(), align) > 0
+    	}
+    }
+    
+    pub fn contextual_item_symbol_text(&mut self, sym: NkSymbolType, label: &str, align: NkFlags) -> bool {
+    	unsafe {
+    		nk_contextual_item_symbol_text(&mut self.internal as *mut nk_context, sym, label.as_ptr() as *const i8, label.as_bytes().len() as i32, align) > 0
     	}
     }
     
@@ -2147,6 +2281,12 @@ impl NkContext {
     	}
     }
     
+    pub fn menu_begin_text(&mut self, panel: &mut NkPanel, title: &str, align: NkFlags, size: NkVec2) -> bool {
+    	unsafe {
+    		nk_menu_begin_text(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr() as *const i8, title.len() as i32, align, size) > 0
+    	}
+    }
+    
     pub fn menu_begin_image(&mut self, panel: &mut NkPanel, title: NkString, img: NkImage, size: NkVec2) -> bool {
     	unsafe {
     		nk_menu_begin_image(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), img.internal, size) > 0
@@ -2156,6 +2296,12 @@ impl NkContext {
     pub fn menu_begin_image_label(&mut self, panel: &mut NkPanel, title: NkString, align: NkFlags, img: NkImage, size: NkVec2) -> bool {
     	unsafe {
     		nk_menu_begin_image_label(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr(), align, img.internal, size) > 0
+    	}
+    }
+    
+    pub fn menu_begin_image_text(&mut self, panel: &mut NkPanel, title: &str, align: NkFlags, img: NkImage, size: NkVec2) -> bool {
+    	unsafe {
+    		nk_menu_begin_image_text(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr() as *const i8, title.len() as i32, align, img.internal, size) > 0
     	}
     }
     
@@ -2171,9 +2317,21 @@ impl NkContext {
     	}
     }
     
+    pub fn menu_begin_symbol_text(&mut self, panel: &mut NkPanel, title: &str, align: NkFlags, sym: NkSymbolType, size: NkVec2) -> bool {
+    	unsafe {
+    		nk_menu_begin_symbol_text(&mut self.internal as *mut nk_context, &mut panel.internal, title.as_ptr() as *const i8, title.len() as i32, align, sym, size) > 0
+    	}
+    }
+    
     pub fn menu_item_label(&mut self, title: NkString, align: NkFlags) -> bool {
     	unsafe {
     		nk_menu_item_label(&mut self.internal as *mut nk_context, title.as_ptr(), align) > 0
+    	}
+    }
+    
+    pub fn menu_item_text(&mut self, title: &str, align: NkFlags) -> bool {
+    	unsafe {
+    		nk_menu_item_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.len() as i32, align) > 0
     	}
     }
     
@@ -2183,9 +2341,21 @@ impl NkContext {
     	}
     }
     
+    pub fn menu_item_image_text(&mut self, img: NkImage, title: &str, align: NkFlags) -> bool {
+    	unsafe {
+    		nk_menu_item_image_text(&mut self.internal as *mut nk_context, img.internal, title.as_ptr() as *const i8, title.len() as i32, align) > 0
+    	}
+    }
+    
     pub fn menu_item_symbol_label(&mut self, sym: NkSymbolType, title: NkString, align: NkFlags) -> bool {
     	unsafe {
     		nk_menu_item_symbol_label(&mut self.internal as *mut nk_context, sym, title.as_ptr(), align) > 0
+    	}
+    }
+    
+    pub fn menu_item_symbol_text(&mut self, sym: NkSymbolType, title: &str, align: NkFlags) -> bool {
+    	unsafe {
+    		nk_menu_item_symbol_text(&mut self.internal as *mut nk_context, sym, title.as_ptr() as *const i8, title.len() as i32, align) > 0
     	}
     }
     
