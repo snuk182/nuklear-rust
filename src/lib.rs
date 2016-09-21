@@ -1,9 +1,12 @@
-#![feature(alloc, heap_api)]
+#![cfg_attr(feature = "rust_allocator", feature(alloc, heap_api))]
 
 #[macro_use]
 extern crate log;
 extern crate nuklear_sys;
-extern crate alloc;
+
+#[cfg(feature = "rust_allocator")]
+mod alloc_heap;
+mod alloc_vec;
 
 use std::default::Default;
 use std::os::raw::*;
@@ -57,6 +60,8 @@ pub const NK_FILTER_DECIMAL: NkPluginFilter = Some(nk_filter_decimal);
 pub const NK_FILTER_HEX: NkPluginFilter = Some(nk_filter_hex);
 pub const NK_FILTER_OCT: NkPluginFilter = Some(nk_filter_oct);
 pub const NK_FILTER_BINARY: NkPluginFilter = Some(nk_filter_binary);
+
+pub const ALIGNMENT: usize = 16;
 
 /*impl NkPluginFilter {
 	fn to_native(&mut self) -> nk_plugin_filter {
@@ -235,7 +240,7 @@ impl<'a> From<&'a [&'a str]> for NkStringArray<'a> {
 //======================================================================================
 
 #[derive(Debug, Clone, PartialEq, Copy)]
-pub enum NkHandleKind {
+enum NkHandleKind {
 	Empty, Ptr, Id, Unknown,
 }
 
@@ -255,10 +260,6 @@ impl Default for NkHandle {
 }
 
 impl NkHandle {
-	pub fn kind(&self) -> NkHandleKind {
-		self.kind
-	}
-	
 	pub fn id(&mut self) -> Option<i32> {
 		match self.kind {
 			NkHandleKind::Id | NkHandleKind::Unknown => {
@@ -312,6 +313,7 @@ impl NkHandle {
 
 //==================================================================================
 
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub struct NkInput {
 	internal: *const nk_input,
 }
@@ -422,7 +424,7 @@ impl NkInput {
 
 //=====================================================================
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Copy)]
 pub struct NkDrawCommand {
 	internal: *const nk_draw_command,
 }
@@ -458,6 +460,7 @@ impl NkDrawCommand {
 
 //=====================================================================
 
+#[derive(Debug, Clone, Copy)]
 pub struct NkMouse {
 	internal: nk_mouse,
 }
@@ -470,6 +473,7 @@ impl NkMouse {
 
 //=====================================================================
 
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub struct NkStyle {
 	internal: *mut nk_style,
 }
@@ -484,6 +488,7 @@ impl NkStyle {
 
 //=====================================================================
 
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub struct NkStyleWindow {
 	internal: *mut nk_style_window,
 }
@@ -526,6 +531,7 @@ impl NkStyleWindow {
 
 //=====================================================================
 
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub struct NkDrawList {
 	internal: *mut nk_draw_list,
 }
@@ -651,7 +657,7 @@ impl NkDrawList {
 	
 	pub fn stroke_poly_line(&mut self, points: &[NkVec2], arg2: NkColor, arg3: NkDrawListStroke, thickness: f32, aa: NkAntiAliasing) {
 		unsafe {
-			nk_draw_list_stroke_poly_line(self.internal, &points[0] as *const nk_vec2, points.len() as u32, arg2, arg3, thickness, aa);
+			nk_draw_list_stroke_poly_line(self.internal, points.as_ptr(), points.len() as u32, arg2, arg3, thickness, aa);
 		}
 	}
 	
@@ -681,7 +687,7 @@ impl NkDrawList {
 	
 	pub fn fill_poly_convex(&mut self, points: &[NkVec2], arg2: NkColor, arg3: NkAntiAliasing) {
 		unsafe {
-			nk_draw_list_fill_poly_convex(self.internal, &points[0] as *const nk_vec2, points.len() as u32, arg2, arg3);
+			nk_draw_list_fill_poly_convex(self.internal, points.as_ptr(), points.len() as u32, arg2, arg3);
 		}
 	}
 	
@@ -706,6 +712,7 @@ impl NkDrawList {
 
 //========
 
+#[derive(Clone, Copy)]
 pub struct NkColorMap {
 	internal: [nk_color; 28],
 }
@@ -726,6 +733,7 @@ impl NkColorMap {
 
 //==================================================================================
 
+#[derive(Debug, Clone, Copy)]
 pub struct NkCursorMap {
 	internal: [nk_cursor; 7],
 }
@@ -746,6 +754,7 @@ impl NkCursorMap {
 
 //==================================================================================
 
+#[derive(Debug, Clone, Copy)]
 pub struct NkCursor {
 	internal: nk_cursor
 }
@@ -766,11 +775,12 @@ pub struct NkAllocator {
 }
 
 impl NkAllocator {
+	#[cfg(feature="alloc, heap_api")]
 	pub fn new_heap() -> NkAllocator {
 		let mut a = NkAllocator::default();
 		
-		a.internal.alloc = Some(alloc_rust);
-		a.internal.free = Some(free_rust);
+		a.internal.alloc = Some(alloc_heap::alloc);
+		a.internal.free = Some(alloc_heap::free);
 		a.internal.userdata = nk_handle::default();
 		unsafe { *(a.internal.userdata.ptr()) = ::std::ptr::null_mut(); }
 		
@@ -780,8 +790,8 @@ impl NkAllocator {
 	pub fn new_vec() -> NkAllocator {
 		let mut a = NkAllocator::default();
 		
-		a.internal.alloc = Some(alloc_rust_hacky);
-		a.internal.free = Some(free_rust_hacky);
+		a.internal.alloc = Some(alloc_vec::alloc);
+		a.internal.free = Some(alloc_vec::free);
 		a.internal.userdata = nk_handle::default();
 		unsafe { *(a.internal.userdata.ptr()) = ::std::ptr::null_mut(); }
 		
@@ -799,6 +809,7 @@ impl Default for NkAllocator {
 
 //============================================================================================
 
+#[derive(Debug, Clone, Copy)]
 pub struct NkConvertConfig {
 	internal: nk_convert_config,
 }
@@ -849,31 +860,30 @@ impl NkConvertConfig {
 
 //============================================================================================
 
+#[derive(Debug, Clone)]
 pub struct NkDrawVertexLayoutElements {
 	arr: Vec<nk_draw_vertex_layout_element>
 }
 
 impl NkDrawVertexLayoutElements {
 	pub fn new(var: &[(NkDrawVertexLayoutAttribute, NkDrawVertexLayoutFormat, u32)]) -> NkDrawVertexLayoutElements {
-		let mut m = NkDrawVertexLayoutElements {
-			arr: Vec::with_capacity(var.len()),
-		};
-		
-		for v in var {
-			let &(a, f, o) = v;
-			m.arr.push(nk_draw_vertex_layout_element {
-				attribute: a,
-				format: f,
-				offset: o as usize,
-			});
+		NkDrawVertexLayoutElements {
+			arr: var.iter()
+		        .map(|&(a, f, o)| {
+		            nk_draw_vertex_layout_element {
+						attribute: a,
+						format: f,
+						offset: o as usize,
+					}
+		        })
+		        .collect::<Vec<_>>(),
 		}
-		
-		m
 	}
 }
 
 //=============================================================================================
 
+#[derive(Debug, Clone, Copy)]
 pub struct NkStyleItem {
 	internal: nk_style_item,
 }
@@ -914,6 +924,7 @@ impl NkStyleItem {
 
 //=============================================================================================
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkTextEdit {
 	internal: *mut nk_text_edit,
 }
@@ -995,7 +1006,7 @@ impl NkTextEdit {
 
 //=============================================================================================
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub struct NkFontConfig {
 	internal: nk_font_config,
 }
@@ -1020,7 +1031,7 @@ impl NkFontConfig {
 
 //=============================================================================================
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum NkError {
 	FontAtlasAlreadyFinalized
 }
@@ -1163,14 +1174,14 @@ impl NkFontAtlas {
 	*/
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum NkFontAtlasState {
 	New, Started, Finalized
 }
 
 //=============================================================================================
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct NkDrawNullTexture {
 	internal: nk_draw_null_texture,
 }
@@ -1187,6 +1198,7 @@ impl Default for NkDrawNullTexture {
 
 const DEFAULT_BUFFER_SIZE: usize = 8096;
 
+#[derive(Debug, Clone, Copy)]
 pub struct NkBuffer {
 	internal: nk_buffer,
 }
@@ -1556,7 +1568,7 @@ impl NkContext {
 	
 	pub fn layout_row(&mut self, fmt: NkLayoutFormat, height: f32, cols_ratio: &[f32]) {
 		unsafe {
-			nk_layout_row(&mut self.internal as *mut nk_context, fmt, height, cols_ratio.len() as i32, &cols_ratio[0] as *const f32);
+			nk_layout_row(&mut self.internal as *mut nk_context, fmt, height, cols_ratio.len() as i32, cols_ratio.as_ptr());
 		}
 	}
 	
@@ -2048,7 +2060,7 @@ impl NkContext {
     
     pub fn plot(&mut self, ty: NkChartType, values: &[f32]) {
     	unsafe {
-    		nk_plot(&mut self.internal as *mut nk_context, ty, &values[0] as *const f32, values.len() as i32, 0);
+    		nk_plot(&mut self.internal as *mut nk_context, ty, values.as_ptr(), values.len() as i32, 0);
     	}
     }
     
@@ -2752,6 +2764,7 @@ impl <'a> Iterator for NkDrawCommandIntoIter<'a> {
 //=============================================================================================
 
 #[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkWindow {
 	internal: *mut nk_window,
 }
@@ -2766,6 +2779,7 @@ impl NkWindow {
 
 //=============================================================================================
 
+#[derive(Debug, Clone, Copy)]
 pub struct NkPanel {
 	internal: nk_panel,
 }
@@ -2786,6 +2800,7 @@ impl NkPanel {
 
 //=============================================================================================
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkPanelRef {
 	internal: *mut nk_panel,
 }
@@ -2804,7 +2819,7 @@ impl NkPanelRef {
 
 //=============================================================================================
 
-#[derive(Clone)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct NkCommand {
 	internal: *const nk_command,
 }
@@ -2825,6 +2840,7 @@ impl Debug for NkCommand {
 
 //=============================================================================================
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkCommandBuffer {
 	internal: *mut nk_command_buffer,
 }
@@ -3090,7 +3106,7 @@ pub fn style_get_color_by_name(c: NkStyleColor) -> Cow<'static, str> {
 
 //=============================================================================================
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct NkImage {
 	internal: nk_image,
 }
@@ -3123,7 +3139,7 @@ impl NkImage {
 
 //=============================================================================================
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkFontGlyph {
 	internal: *const nk_font_glyph,
 }
@@ -3185,7 +3201,7 @@ impl NkFontGlyph {
 
 //=============================================================================================
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkFont {
 	internal: *mut nk_font
 }
@@ -3211,7 +3227,7 @@ impl NkFont {
 
 //=============================================================================================
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkUserFont {
 	internal: *mut nk_user_font,
 }
@@ -3232,117 +3248,3 @@ impl NkUserFont {
     pub fn nk_font_cyrillic_glyph_ranges() -> *const nk_rune;
     pub fn nk_font_korean_glyph_ranges() -> *const nk_rune;
 */
-
-//=============================================================================================
-
-const ALIGNMENT: usize = 16;
-use alloc::heap;
-use std::mem;
-
-unsafe extern "C" fn alloc_rust(_: nk_handle, _: *mut c_void, size: nk_size) -> *mut c_void {
-	trace!("allocating {} bytes", size);
-		
-    let size_size = mem::size_of::<nk_size>();
-    let size = size + size_size;
-
-    /*let memory = if old.is_null() {
-        trace!("allocating {} / {} bytes", size_size, size);
-		heap::allocate(size, ALIGNMENT)
-    } else {
-        trace!("reallocating {} / {} bytes", size_size, size);
-		let old = old as *mut u8;
-        let old = old.offset(-(size_size as isize));
-        let old_size = *(old as *const nk_size);
-        heap::reallocate(old, old_size, size, ALIGNMENT)
-    };*/
-    
-    let memory = heap::allocate(size, ALIGNMENT);
-    trace!("allocating {} / {} bytes", size_size, size);		
-    
-    *(memory as *mut nk_size) = size;
-    trace!("allocated {} bytes at {:p}", size, memory);
-    memory.offset(size_size as isize) as *mut c_void
-}
-
-unsafe extern "C" fn free_rust(_: nk_handle, old: *mut c_void) {
-    if old.is_null() {
-    	trace!("no dealloc for empty pointer");
-    	return;
-    }
-
-    let size_size = mem::size_of::<nk_size>();
-    
-    let old = old as *mut u8;
-    let old = old.offset(-(size_size as isize));
-    let old_size = *(old as *const nk_size);
-
-    trace!("deallocating {} bytes from {:p}", old_size, old);
-	
-	heap::deallocate(old as *mut u8, old_size, ALIGNMENT);
-}
-
-unsafe extern "C" fn alloc_rust_hacky(_: nk_handle, _: *mut c_void, size: nk_size) -> *mut c_void {
-	/*if old.is_null() {
-		free_rust_hacky(hnd, old);
-	}*/
-	
-	trace!("allocating {} bytes", size);
-	let size_size = mem::size_of::<nk_size>();
-    let size = size + size_size;
-
-    trace!("allocating {} / {} bytes", size_size, size);
-	
-	let mut v: Vec<u8> = Vec::with_capacity(size);
-    
-    let ptr = v.as_mut_ptr();
-    std::mem::forget(v);
-    
-    *(ptr as *mut nk_size) = size;
-    ptr.offset(size_size as isize) as *mut c_void
-}
-
-unsafe extern "C" fn free_rust_hacky(_: nk_handle, old: *mut c_void) {
-    if old.is_null() {
-    	trace!("no dealloc for empty pointer");
-    	return;
-    }
-
-    let size_size = mem::size_of::<nk_size>();
-
-    let old = old as *mut u8;
-    let old = old.offset(-(size_size as isize));
-    let old_size = *(old as *const nk_size);
-    
-    if old_size > 16_000_000_000 {
-    	trace!("Invalid dealloc size {}", old_size);
-    	return;
-    }
-
-    trace!("deallocating {} bytes", old_size);
-	
-	std::mem::drop(Vec::from_raw_parts(old, 0, old_size));
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-	use nuklear_sys::*;
-	
-    #[test]
-    fn test_alloc_dealloc() {
-    	let mut allo = NkAllocator::new_heap();
-    	let mut h = nk_handle::default();
-    	
-    	unsafe {
-    		trace!("allocating 100500");
-	    	let mut mem = allo.internal.alloc.unwrap()(h, ::std::ptr::null_mut(), 100500);
-	    	trace!("freeing 100500");
-	    	allo.internal.free.unwrap()(h, mem);
-    	}
-    }
-    
-    #[test]
-    fn it_works() {
-    	trace!("size {}", ((::std::mem::size_of::<nk_window>() / ::std::mem::size_of::<nk_uint>()) / 2));
-    }
-}

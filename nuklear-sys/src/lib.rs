@@ -317,7 +317,7 @@ pub enum nk_symbol_type {
     NK_SYMBOL_MINUS = 12,
     NK_SYMBOL_MAX = 13,
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 #[repr(i32)]
 #[derive(Debug)]
 pub enum nk_keys {
