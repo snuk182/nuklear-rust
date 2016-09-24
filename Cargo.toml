@@ -1,12 +1,13 @@
 [package]
 name = "nuklear-rust"
 version = "0.1.0"
-authors = ["plyhuns"]
-
-description = "Bindings to vurtun/nuklear"
-homepage = "https://github.com/snuk182/nuklear-rust"
-repository = "https://github.com/snuk182/nuklear-rust"
+authors = ["Serhii Plyhun <snuk188@gmail.com>"]
+keywords = ["ui", "widgets", "gui", "interface", "graphics"]
+description = "Rust wrapper for Nuklear 2D GUI library (github.com/vurtun/nuklear)"
 license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/snuk182/nuklear-rust.git"
+homepage = "https://github.com/snuk182/nuklear-rust"
 
 [lib]
 name = "nuklear_rust"
@@ -15,6 +16,9 @@ path = "src/lib.rs"
 [dependencies]
 libc = "*"
 log = "*"
+
+[features]
+default = []
 
 [dependencies.nuklear-sys]
 path = "nuklear-sys"
