@@ -14,8 +14,8 @@ name = "nuklear_rust"
 path = "src/lib.rs"
 
 [dependencies]
-libc = "*"
-log = "*"
+libc = "0.2.15"
+log = "0.3.6"
 
 [features]
 default = []
@@ -24,5 +24,5 @@ default = []
 path = "nuklear-sys"
 
 [build-dependencies]
-gcc = "*"
+gcc = "0.3.35"
 
