@@ -1,6 +1,6 @@
 [package]
 name = "nuklear-rust"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Serhii Plyhun <snuk188@gmail.com>"]
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
 description = "Rust wrapper for Nuklear 2D GUI library (github.com/vurtun/nuklear)"
@@ -22,7 +22,7 @@ default = []
 
 [dependencies.nuklear-sys]
 path = "nuklear-sys"
-version = "0.1.1"
+version = "0.1.2"
 
 [build-dependencies]
 gcc = "0.3.35"
