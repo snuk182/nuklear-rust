@@ -3363,7 +3363,7 @@ impl NkFontAtlas {
         self.add_font_with_config(&cfg)
     }
 
-    pub fn bake(&mut self, format: NkFontAtlasFormat) -> (Vec<u8>, u32, u32) {
+    pub fn bake<'a>(&'a mut self, format: NkFontAtlasFormat) -> (&'a [u8], u32, u32) {
         let mut width: i32 = 0;
         let mut height: i32 = 0;
 
@@ -3375,7 +3375,7 @@ impl NkFontAtlas {
         };
 
         if width < 1 || height < 1 {
-            return (vec![], width as u32, height as u32);
+            return (&[], width as u32, height as u32);
         }
 
         let size = (match format {
@@ -3385,7 +3385,7 @@ impl NkFontAtlas {
 
         // 		self.state = NkFontAtlasState::Finalized;
 
-        (unsafe { Vec::from_raw_parts(image as *mut u8, size, size) }, width as u32, height as u32)
+        (unsafe { ::std::slice::from_raw_parts(image as *const u8, size) }, width as u32, height as u32)
     }
 
     pub fn end(&mut self, hnd: NkHandle, null_texture: Option<&mut NkDrawNullTexture>) {
