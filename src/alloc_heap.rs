@@ -5,7 +5,7 @@ extern crate alloc;
 use nuklear_sys::{nk_size, nk_handle};
 use super::ALIGNMENT;
 
-use alloc::heap;
+use self::alloc::heap;
 use std::os::raw::c_void;
 use std::mem;
 
