@@ -5319,6 +5319,92 @@ impl NkWindow {
     fn new(w: *mut nk_window) -> NkWindow {
         NkWindow { internal: w }
     }
+
+    // pub seq: ::std::os::raw::c_uint,
+    // pub name: nk_hash,
+    // pub name_string: [::std::os::raw::c_char; 64usize],
+    // pub flags: nk_flags,
+    // pub bounds: nk_rect,
+    // pub scrollbar: nk_scroll,
+    // pub buffer: nk_command_buffer,
+    // pub layout: *mut nk_panel,
+    // pub scrollbar_hiding_timer: f32,
+    // pub property: nk_property_state,
+    // pub popup: nk_popup_state,
+    // pub edit: nk_edit_state,
+    // pub scrolled: ::std::os::raw::c_uint,
+    // pub tables: *mut nk_table,
+    // pub table_count: ::std::os::raw::c_ushort,
+    // pub table_size: ::std::os::raw::c_ushort,
+    // pub next: *mut nk_window,
+    // pub prev: *mut nk_window,
+    // pub parent: *mut nk_window,
+    //
+
+    pub fn seq(&self) -> u32 {
+        unsafe { (*self.internal).seq }
+    }
+    pub fn name<'a>(&'a self) -> &'a str {
+        unsafe {
+            let name = ::std::mem::transmute::<&[i8], &[u8]>(&(*self.internal).name_string);
+            let mut len = name.len();
+            let mut ch = 0;
+            while ch == 0 && len > 0 {
+                len -= 1;
+                ch = name[len];
+            }
+            if len < name.len() {
+                len += 1;
+            }
+            ::std::str::from_utf8_unchecked(&name[0..len])
+        }
+    }
+    pub fn flags(&self) -> NkFlags {
+        unsafe { (*self.internal).flags }
+    }
+    pub fn bounds(&self) -> NkRect {
+        unsafe { (*self.internal).bounds }
+    }
+    pub fn scrollbar(&self) -> NkScroll {
+        unsafe { (*self.internal).scrollbar }
+    }
+    pub fn scrollbar_hiding_timer(&self) -> f32 {
+        unsafe { (*self.internal).scrollbar_hiding_timer }
+    }
+
+    // pub buffer: nk_command_buffer,
+    // pub layout: *mut nk_panel,
+    // pub property: nk_property_state,
+    // pub popup: nk_popup_state,
+    // pub edit: nk_edit_state,
+    // pub scrolled: ::std::os::raw::c_uint,
+    // pub tables: *mut nk_table,
+    // pub table_count: ::std::os::raw::c_ushort,
+    // pub table_size: ::std::os::raw::c_ushort,
+    // pub next: *mut nk_window,
+    // pub prev: *mut nk_window,
+    // pub parent: *mut nk_window,
+
+    pub fn set_flags(&mut self, flags: NkFlags) {
+        unsafe {
+            (*self.internal).flags = flags;
+        }
+    }
+    pub fn set_bounds(&mut self, rect: NkRect) {
+        unsafe {
+            (*self.internal).bounds = rect;
+        }
+    }
+    pub fn set_scrollbar(&mut self, scroll: NkScroll) {
+        unsafe {
+            (*self.internal).scrollbar = scroll;
+        }
+    }
+    pub fn set_scrollbar_hiding_timer(&mut self, value: f32) {
+        unsafe {
+            (*self.internal).scrollbar_hiding_timer = value;
+        }
+    }
 }
 
 // =============================================================================================

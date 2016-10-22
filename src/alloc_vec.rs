@@ -4,10 +4,6 @@ use std::os::raw::c_void;
 use std::mem;
 
 pub unsafe extern "C" fn alloc(_: nk_handle, _: *mut c_void, size: nk_size) -> *mut c_void {
-    // if old.is_null() {
-    // free(hnd, old);
-    // }
-
     trace!("allocating {} bytes", size);
     let size_size = mem::size_of::<nk_size>();
     let size = size + size_size;
@@ -25,7 +21,6 @@ pub unsafe extern "C" fn alloc(_: nk_handle, _: *mut c_void, size: nk_size) -> *
 
 pub unsafe extern "C" fn free(_: nk_handle, old: *mut c_void) {
     if old.is_null() {
-        trace!("no dealloc for empty pointer");
         return;
     }
 
