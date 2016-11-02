@@ -5016,13 +5016,9 @@ impl NkContext {
         }
     }
 
-    pub fn style_from_table(&mut self, table: Option<&NkColorMap>) {
+    pub fn style_from_table(&mut self, table: &NkColorMap) {
         unsafe {
-            nk_style_from_table(&mut self.internal as *mut nk_context,
-                                match table {
-                                    Some(map) => &map.internal[0] as *const nk_color,
-                                    None => ::std::ptr::null(),
-                                });
+            nk_style_from_table(&mut self.internal as *mut nk_context, &table.internal[0] as *const nk_color);
         }
     }
 
