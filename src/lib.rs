@@ -2952,7 +2952,7 @@ pub struct NkAllocator {
 }
 
 impl NkAllocator {
-    #[cfg(feature="alloc, heap_api")]
+    #[cfg(feature="rust_allocator")]
     pub fn new_heap() -> NkAllocator {
         let mut a = NkAllocator::default();
 
