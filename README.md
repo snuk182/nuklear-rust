@@ -1,5 +1,7 @@
 # nuklear-rust
 
+[![Latest Version](https://img.shields.io/crates/v/nuklear-rust.svg)](https://crates.io/crates/nuklear-rust)
+
 The bindings to the [Nuklear](https://github.com/vurtun/nuklear) 2D immediate GUI library. 
 
 Currently beta.
