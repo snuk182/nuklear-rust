@@ -79,6 +79,8 @@ unsafe extern "C" fn nk_filter_custom(arg1: *const nk_text_edit, unicode: nk_run
         1
     }
 }
+
+#[allow(non_upper_case_globals)]
 static mut custom_edit_filter: Option<fn(NkTextEdit, char) -> bool> = None;
 
 // ===========================================================================================================
@@ -285,14 +287,14 @@ impl Default for NkHandle {
 impl NkHandle {
     pub fn id(&mut self) -> Option<i32> {
         match self.kind {
-            NkHandleKind::Id | NkHandleKind::Unknown => Some(unsafe { *(self.internal.id()) }),
+            NkHandleKind::Id | NkHandleKind::Unknown => Some(unsafe { *(self.internal.id.as_ref()) }),
             _ => None,
         }
     }
 
     pub fn ptr(&mut self) -> Option<*mut c_void> {
         match self.kind {
-            NkHandleKind::Ptr | NkHandleKind::Unknown => Some(unsafe { *(self.internal.ptr()) }),
+            NkHandleKind::Ptr | NkHandleKind::Unknown => Some(unsafe { *(self.internal.ptr.as_mut()) }),
             _ => None,
         }
     }
@@ -2960,7 +2962,7 @@ impl NkAllocator {
         a.internal.free = Some(alloc_heap::free);
         a.internal.userdata = nk_handle::default();
         unsafe {
-            *(a.internal.userdata.ptr()) = ::std::ptr::null_mut();
+            *(a.internal.userdata.ptr.as_mut()) = ::std::ptr::null_mut();
         }
 
         a
@@ -2973,7 +2975,7 @@ impl NkAllocator {
         a.internal.free = Some(alloc_vec::free);
         a.internal.userdata = nk_handle::default();
         unsafe {
-            *(a.internal.userdata.ptr()) = ::std::ptr::null_mut();
+            *(a.internal.userdata.ptr.as_mut()) = ::std::ptr::null_mut();
         }
 
         a
@@ -3597,20 +3599,18 @@ impl NkContext {
         }
     }
 
-    pub fn begin(&mut self, panel: &mut NkPanel, title: NkString, bounds: NkRect, flags: NkFlags) -> bool {
+    pub fn begin(&mut self, title: NkString, bounds: NkRect, flags: NkFlags) -> bool {
         unsafe {
             nk_begin(&mut self.internal as *mut nk_context,
-                     &mut panel.internal,
                      title.as_ptr(),
                      bounds,
                      flags) != 0
         }
     }
 
-    pub fn begin_titled(&mut self, panel: &mut NkPanel, name: NkString, title: NkString, bounds: NkRect, flags: NkFlags) -> i32 {
+    pub fn begin_titled(&mut self, name: NkString, title: NkString, bounds: NkRect, flags: NkFlags) -> i32 {
         unsafe {
             nk_begin_titled(&mut self.internal as *mut nk_context,
-                            &mut panel.internal,
                             name.as_ptr(),
                             title.as_ptr(),
                             bounds,
@@ -3870,10 +3870,9 @@ impl NkContext {
         unsafe { nk_layout_ratio_from_pixel(&mut self.internal as *mut nk_context, pixel_width) }
     }
 
-    pub fn nk_group_begin(&mut self, panel: &mut NkPanel, title: NkString, flags: NkFlags) -> i32 {
+    pub fn nk_group_begin(&mut self, title: NkString, flags: NkFlags) -> i32 {
         unsafe {
             nk_group_begin(&mut self.internal as *mut nk_context,
-                           &mut panel.internal,
                            title.as_ptr(),
                            flags)
         }
@@ -4483,10 +4482,9 @@ impl NkContext {
     // }
     // }
 
-    pub fn popup_begin(&mut self, panel: &mut NkPanel, ty: NkPopupType, title: NkString, flags: NkFlags, bounds: NkRect) -> bool {
+    pub fn popup_begin(&mut self, ty: NkPopupType, title: NkString, flags: NkFlags, bounds: NkRect) -> bool {
         unsafe {
             nk_popup_begin(&mut self.internal as *mut nk_context,
-                           &mut panel.internal,
                            ty,
                            title.as_ptr(),
                            flags,
@@ -4530,57 +4528,51 @@ impl NkContext {
         }
     }
 
-    pub fn combo_begin_label(&mut self, panel: &mut NkPanel, selected: NkString, size: NkVec2) -> bool {
+    pub fn combo_begin_label(&mut self, selected: NkString, size: NkVec2) -> bool {
         unsafe {
             nk_combo_begin_label(&mut self.internal as *mut nk_context,
-                                 &mut panel.internal,
                                  selected.as_ptr(),
                                  size) > 0
         }
     }
 
-    pub fn combo_begin_text(&mut self, panel: &mut NkPanel, selected: &str, size: NkVec2) -> bool {
+    pub fn combo_begin_text(&mut self, selected: &str, size: NkVec2) -> bool {
         unsafe {
             nk_combo_begin_text(&mut self.internal as *mut nk_context,
-                                &mut panel.internal,
                                 selected.as_ptr() as *const i8,
                                 selected.as_bytes().len() as i32,
                                 size) > 0
         }
     }
 
-    pub fn combo_begin_color(&mut self, panel: &mut NkPanel, color: NkColor, size: NkVec2) -> bool {
+    pub fn combo_begin_color(&mut self, color: NkColor, size: NkVec2) -> bool {
         unsafe {
             nk_combo_begin_color(&mut self.internal as *mut nk_context,
-                                 &mut panel.internal,
                                  color,
                                  size) > 0
         }
     }
 
-    pub fn combo_begin_symbol(&mut self, panel: &mut NkPanel, sym: NkSymbolType, size: NkVec2) -> bool {
+    pub fn combo_begin_symbol(&mut self, sym: NkSymbolType, size: NkVec2) -> bool {
         unsafe {
             nk_combo_begin_symbol(&mut self.internal as *mut nk_context,
-                                  &mut panel.internal,
                                   sym,
                                   size) > 0
         }
     }
 
-    pub fn combo_begin_symbol_label(&mut self, panel: &mut NkPanel, label: NkString, sym: NkSymbolType, size: NkVec2) -> bool {
+    pub fn combo_begin_symbol_label(&mut self, label: NkString, sym: NkSymbolType, size: NkVec2) -> bool {
         unsafe {
             nk_combo_begin_symbol_label(&mut self.internal as *mut nk_context,
-                                        &mut panel.internal,
                                         label.as_ptr(),
                                         sym,
                                         size) > 0
         }
     }
 
-    pub fn combo_begin_symbol_text(&mut self, panel: &mut NkPanel, label: &str, sym: NkSymbolType, size: NkVec2) -> bool {
+    pub fn combo_begin_symbol_text(&mut self, label: &str, sym: NkSymbolType, size: NkVec2) -> bool {
         unsafe {
             nk_combo_begin_symbol_text(&mut self.internal as *mut nk_context,
-                                       &mut panel.internal,
                                        label.as_ptr() as *const i8,
                                        label.as_bytes().len() as i32,
                                        sym,
@@ -4588,29 +4580,26 @@ impl NkContext {
         }
     }
 
-    pub fn combo_begin_image(&mut self, panel: &mut NkPanel, img: NkImage, size: NkVec2) -> bool {
+    pub fn combo_begin_image(&mut self, img: NkImage, size: NkVec2) -> bool {
         unsafe {
             nk_combo_begin_image(&mut self.internal as *mut nk_context,
-                                 &mut panel.internal,
                                  img.internal,
                                  size) > 0
         }
     }
 
-    pub fn combo_begin_image_label(&mut self, panel: &mut NkPanel, label: NkString, img: NkImage, size: NkVec2) -> bool {
+    pub fn combo_begin_image_label(&mut self, label: NkString, img: NkImage, size: NkVec2) -> bool {
         unsafe {
             nk_combo_begin_image_label(&mut self.internal as *mut nk_context,
-                                       &mut panel.internal,
                                        label.as_ptr(),
                                        img.internal,
                                        size) > 0
         }
     }
 
-    pub fn combo_begin_image_text(&mut self, panel: &mut NkPanel, label: &str, img: NkImage, size: NkVec2) -> bool {
+    pub fn combo_begin_image_text(&mut self, label: &str, img: NkImage, size: NkVec2) -> bool {
         unsafe {
             nk_combo_begin_image_text(&mut self.internal as *mut nk_context,
-                                      &mut panel.internal,
                                       label.as_ptr() as *const i8,
                                       label.as_bytes().len() as i32,
                                       img.internal,
@@ -4685,10 +4674,9 @@ impl NkContext {
         }
     }
 
-    pub fn contextual_begin(&mut self, panel: &mut NkPanel, flags: NkFlags, bounds: NkVec2, trigger_bounds: NkRect) -> bool {
+    pub fn contextual_begin(&mut self, flags: NkFlags, bounds: NkVec2, trigger_bounds: NkRect) -> bool {
         unsafe {
             nk_contextual_begin(&mut self.internal as *mut nk_context,
-                                &mut panel.internal,
                                 flags,
                                 bounds,
                                 trigger_bounds) > 0
@@ -4764,10 +4752,9 @@ impl NkContext {
         }
     }
 
-    pub fn tooltip_begin(&mut self, panel: &mut NkPanel, width: f32) -> bool {
+    pub fn tooltip_begin(&mut self, width: f32) -> bool {
         unsafe {
             nk_tooltip_begin(&mut self.internal as *mut nk_context,
-                             &mut panel.internal,
                              width) > 0
         }
     }
@@ -4790,20 +4777,18 @@ impl NkContext {
         }
     }
 
-    pub fn menu_begin_label(&mut self, panel: &mut NkPanel, title: NkString, align: NkFlags, size: NkVec2) -> bool {
+    pub fn menu_begin_label(&mut self, title: NkString, align: NkFlags, size: NkVec2) -> bool {
         unsafe {
             nk_menu_begin_label(&mut self.internal as *mut nk_context,
-                                &mut panel.internal,
                                 title.as_ptr(),
                                 align,
                                 size) > 0
         }
     }
 
-    pub fn menu_begin_text(&mut self, panel: &mut NkPanel, title: &str, align: NkFlags, size: NkVec2) -> bool {
+    pub fn menu_begin_text(&mut self, title: &str, align: NkFlags, size: NkVec2) -> bool {
         unsafe {
             nk_menu_begin_text(&mut self.internal as *mut nk_context,
-                               &mut panel.internal,
                                title.as_ptr() as *const i8,
                                title.len() as i32,
                                align,
@@ -4811,20 +4796,18 @@ impl NkContext {
         }
     }
 
-    pub fn menu_begin_image(&mut self, panel: &mut NkPanel, title: NkString, img: NkImage, size: NkVec2) -> bool {
+    pub fn menu_begin_image(&mut self, title: NkString, img: NkImage, size: NkVec2) -> bool {
         unsafe {
             nk_menu_begin_image(&mut self.internal as *mut nk_context,
-                                &mut panel.internal,
                                 title.as_ptr(),
                                 img.internal,
                                 size) > 0
         }
     }
 
-    pub fn menu_begin_image_label(&mut self, panel: &mut NkPanel, title: NkString, align: NkFlags, img: NkImage, size: NkVec2) -> bool {
+    pub fn menu_begin_image_label(&mut self, title: NkString, align: NkFlags, img: NkImage, size: NkVec2) -> bool {
         unsafe {
             nk_menu_begin_image_label(&mut self.internal as *mut nk_context,
-                                      &mut panel.internal,
                                       title.as_ptr(),
                                       align,
                                       img.internal,
@@ -4832,10 +4815,9 @@ impl NkContext {
         }
     }
 
-    pub fn menu_begin_image_text(&mut self, panel: &mut NkPanel, title: &str, align: NkFlags, img: NkImage, size: NkVec2) -> bool {
+    pub fn menu_begin_image_text(&mut self, title: &str, align: NkFlags, img: NkImage, size: NkVec2) -> bool {
         unsafe {
             nk_menu_begin_image_text(&mut self.internal as *mut nk_context,
-                                     &mut panel.internal,
                                      title.as_ptr() as *const i8,
                                      title.len() as i32,
                                      align,
@@ -4844,20 +4826,18 @@ impl NkContext {
         }
     }
 
-    pub fn menu_begin_symbol(&mut self, panel: &mut NkPanel, title: NkString, sym: NkSymbolType, size: NkVec2) -> bool {
+    pub fn menu_begin_symbol(&mut self, title: NkString, sym: NkSymbolType, size: NkVec2) -> bool {
         unsafe {
             nk_menu_begin_symbol(&mut self.internal as *mut nk_context,
-                                 &mut panel.internal,
                                  title.as_ptr(),
                                  sym,
                                  size) > 0
         }
     }
 
-    pub fn menu_begin_symbol_label(&mut self, panel: &mut NkPanel, title: NkString, align: NkFlags, sym: NkSymbolType, size: NkVec2) -> bool {
+    pub fn menu_begin_symbol_label(&mut self, title: NkString, align: NkFlags, sym: NkSymbolType, size: NkVec2) -> bool {
         unsafe {
             nk_menu_begin_symbol_label(&mut self.internal as *mut nk_context,
-                                       &mut panel.internal,
                                        title.as_ptr(),
                                        align,
                                        sym,
@@ -4865,10 +4845,9 @@ impl NkContext {
         }
     }
 
-    pub fn menu_begin_symbol_text(&mut self, panel: &mut NkPanel, title: &str, align: NkFlags, sym: NkSymbolType, size: NkVec2) -> bool {
+    pub fn menu_begin_symbol_text(&mut self, title: &str, align: NkFlags, sym: NkSymbolType, size: NkVec2) -> bool {
         unsafe {
             nk_menu_begin_symbol_text(&mut self.internal as *mut nk_context,
-                                      &mut panel.internal,
                                       title.as_ptr() as *const i8,
                                       title.len() as i32,
                                       align,
@@ -4994,7 +4973,7 @@ impl NkContext {
 
     pub fn input_glyph(&mut self, g: NkGlyph) {
         unsafe {
-            nk_input_glyph(&mut self.internal as *mut nk_context, g);
+            nk_input_glyph(&mut self.internal as *mut nk_context, &g[0] as *const _ as *mut i8);
         }
     }
 
@@ -5727,11 +5706,11 @@ impl NkImage {
     }
 
     pub fn id(&mut self) -> i32 {
-        unsafe { *(self.internal.handle.id()) }
+        unsafe { *(self.internal.handle.id.as_ref()) }
     }
 
     pub fn ptr(&mut self) -> *mut c_void {
-        unsafe { *(self.internal.handle.ptr()) }
+        unsafe { *(self.internal.handle.ptr.as_mut()) }
     }
 }
 
