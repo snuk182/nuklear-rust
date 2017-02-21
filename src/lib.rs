@@ -12,6 +12,7 @@ use std::default::Default;
 use std::os::raw::*;
 use std::borrow::Cow;
 use std::fmt::{Debug, Formatter};
+use std::marker::PhantomData;
 
 use nuklear_sys::*;
 
@@ -39,6 +40,8 @@ pub use nuklear_sys::nk_draw_vertex_layout_format as NkDrawVertexLayoutFormat;
 pub use nuklear_sys::nk_edit_types as NkEditType;
 pub use nuklear_sys::nk_font_coord_type as NkFontCoordType;
 pub use nuklear_sys::nk_style_header_align as NkStyleHeaderAlign;
+pub use nuklear_sys::nk_panel_type as NkPanelType;
+pub use nuklear_sys::nk_panel_row_layout_type as NkPanelRowLayoutType;
 
 pub use nuklear_sys::nk_panel_flags as NkPanelFlags;
 pub use nuklear_sys::nk_text_alignment as NkTextAlignment;
@@ -50,6 +53,9 @@ pub use nuklear_sys::nk_color as NkColor;
 pub use nuklear_sys::nk_rect as NkRect;
 pub use nuklear_sys::nk_recti as NkRecti;
 pub use nuklear_sys::nk_style_text as NkStyleText;
+pub use nuklear_sys::nk_menu_state as NkMenuState;
+pub use nuklear_sys::nk_chart_slot as NkChartSlot;
+pub use nuklear_sys::nk_popup_buffer as NkPopupBuffer;
 
 pub use nuklear_sys::nk_glyph as NkGlyph;
 
@@ -319,11 +325,15 @@ impl NkHandle {
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub struct NkInput {
     internal: *const nk_input,
+    p: PhantomData<nk_input>,
 }
 
 impl NkInput {
     fn new(i: *const nk_input) -> NkInput {
-        NkInput { internal: i }
+        NkInput {
+            internal: i,
+            p: PhantomData,
+        }
     }
 
     pub fn mouse(&self) -> NkMouse {
@@ -396,6 +406,7 @@ impl NkInput {
 #[derive(Clone, PartialEq, Copy)]
 pub struct NkDrawCommand {
     internal: *const nk_draw_command,
+    p: PhantomData<nk_draw_command>,
 }
 
 impl Debug for NkDrawCommand {
@@ -405,8 +416,8 @@ impl Debug for NkDrawCommand {
 }
 
 impl NkDrawCommand {
-    pub fn clip_rect(&self) -> NkRect {
-        unsafe { (*self.internal).clip_rect }
+    pub fn clip_rect(&self) -> &NkRect {
+        unsafe { &(*self.internal).clip_rect }
     }
 
     pub fn elem_count(&self) -> u32 {
@@ -446,16 +457,16 @@ pub struct NkMouse {
 }
 
 impl NkMouse {
-    pub fn pos(&self) -> NkVec2 {
-        self.internal.pos
+    pub fn pos(&self) -> &NkVec2 {
+        &self.internal.pos
     }
 
-    pub fn prev(&self) -> NkVec2 {
-        self.internal.prev
+    pub fn prev(&self) -> &NkVec2 {
+        &self.internal.prev
     }
 
-    pub fn delta(&self) -> NkVec2 {
-        self.internal.delta
+    pub fn delta(&self) -> &NkVec2 {
+        &self.internal.delta
     }
 
     pub fn scroll_delta(&self) -> f32 {
@@ -488,6 +499,7 @@ impl NkMouse {
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub struct NkStyle {
     internal: *mut nk_style,
+    p: PhantomData<nk_style>,
 }
 
 impl NkStyle {
@@ -507,7 +519,7 @@ impl NkStyle {
         NkCursor::new(unsafe { (*self.internal).cursor_active })
     }
 
-    // pub fn cursor_last(&self) -> NkCursor {
+    // pub fn cursor_last(&self) -> &NkCursor {
     // NkCursor::new(unsafe {(*self.internal).cursor_active})
     // }
 
@@ -515,8 +527,8 @@ impl NkStyle {
         unsafe { (*self.internal).cursor_visible > 0 }
     }
 
-    pub fn text(&self) -> NkStyleText {
-        unsafe { (*self.internal).text }
+    pub fn text(&self) -> &NkStyleText {
+        unsafe { &(*self.internal).text }
     }
 
     pub fn button(&self) -> NkStyleButton {
@@ -584,11 +596,15 @@ impl NkStyle {
 
 pub struct NkStyleCombo {
     internal: *mut nk_style_combo,
+    p: PhantomData<nk_style_combo>,
 }
 
 impl NkStyleCombo {
     fn new(s: *mut nk_style_combo) -> NkStyleCombo {
-        NkStyleCombo { internal: s }
+        NkStyleCombo {
+            internal: s,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -605,48 +621,48 @@ impl NkStyleCombo {
         NkStyleItemRef::new(unsafe { &(*self.internal).active as *const _ as *mut nk_style_item })
     }
 
-    pub fn border_color(&self) -> NkColor {
-        unsafe { (*self.internal).border_color }
+    pub fn border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).border_color }
     }
 
-    pub fn label_normal(&self) -> NkColor {
-        unsafe { (*self.internal).label_normal }
+    pub fn label_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).label_normal }
     }
 
-    pub fn label_hover(&self) -> NkColor {
-        unsafe { (*self.internal).label_hover }
+    pub fn label_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).label_hover }
     }
 
-    pub fn label_active(&self) -> NkColor {
-        unsafe { (*self.internal).label_active }
+    pub fn label_active(&self) -> &NkColor {
+        unsafe { &(*self.internal).label_active }
     }
 
-    pub fn symbol_normal(&self) -> NkColor {
-        unsafe { (*self.internal).symbol_normal }
+    pub fn symbol_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).symbol_normal }
     }
 
-    pub fn symbol_hover(&self) -> NkColor {
-        unsafe { (*self.internal).symbol_hover }
+    pub fn symbol_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).symbol_hover }
     }
 
-    pub fn symbol_active(&self) -> NkColor {
-        unsafe { (*self.internal).symbol_active }
+    pub fn symbol_active(&self) -> &NkColor {
+        unsafe { &(*self.internal).symbol_active }
     }
 
     pub fn button(&self) -> NkStyleButton {
         NkStyleButton::new(unsafe { &mut (*self.internal).button })
     }
 
-    pub fn sym_normal(&self) -> NkSymbolType {
-        unsafe { (*self.internal).sym_normal }
+    pub fn sym_normal(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).sym_normal }
     }
 
-    pub fn sym_hover(&self) -> NkSymbolType {
-        unsafe { (*self.internal).sym_hover }
+    pub fn sym_hover(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).sym_hover }
     }
 
-    pub fn sym_active(&self) -> NkSymbolType {
-        unsafe { (*self.internal).sym_active }
+    pub fn sym_active(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).sym_active }
     }
 
     pub fn border(&self) -> f32 {
@@ -657,16 +673,16 @@ impl NkStyleCombo {
         unsafe { (*self.internal).rounding }
     }
 
-    pub fn content_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).content_padding }
+    pub fn content_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).content_padding }
     }
 
-    pub fn button_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).button_padding }
+    pub fn button_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).button_padding }
     }
 
-    pub fn spacing(&self) -> NkVec2 {
-        unsafe { (*self.internal).spacing }
+    pub fn spacing(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).spacing }
     }
 
     // ===== setters ======
@@ -758,11 +774,15 @@ impl NkStyleCombo {
 
 pub struct NkStyleTab {
     internal: *mut nk_style_tab,
+    p: PhantomData<nk_style_tab>,
 }
 
 impl NkStyleTab {
     fn new(s: *mut nk_style_tab) -> NkStyleTab {
-        NkStyleTab { internal: s }
+        NkStyleTab {
+            internal: s,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -771,12 +791,12 @@ impl NkStyleTab {
         NkStyleItemRef::new(unsafe { &(*self.internal).background as *const _ as *mut nk_style_item })
     }
 
-    pub fn border_color(&self) -> NkColor {
-        unsafe { (*self.internal).border_color }
+    pub fn border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).border_color }
     }
 
-    pub fn text(&self) -> NkColor {
-        unsafe { (*self.internal).text }
+    pub fn text(&self) -> &NkColor {
+        unsafe { &(*self.internal).text }
     }
 
     pub fn tab_maximize_button(&self) -> NkStyleButton {
@@ -795,12 +815,12 @@ impl NkStyleTab {
         NkStyleButton::new(unsafe { &mut (*self.internal).node_minimize_button })
     }
 
-    pub fn sym_minimize(&self) -> NkSymbolType {
-        unsafe { (*self.internal).sym_minimize }
+    pub fn sym_minimize(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).sym_minimize }
     }
 
-    pub fn sym_maximize(&self) -> NkSymbolType {
-        unsafe { (*self.internal).sym_maximize }
+    pub fn sym_maximize(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).sym_maximize }
     }
 
     pub fn border(&self) -> f32 {
@@ -815,12 +835,12 @@ impl NkStyleTab {
         unsafe { (*self.internal).indent }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
-    pub fn spacing(&self) -> NkVec2 {
-        unsafe { (*self.internal).spacing }
+    pub fn spacing(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).spacing }
     }
 
     // ===== setters =====
@@ -888,11 +908,15 @@ impl NkStyleTab {
 
 pub struct NkStyleScrollbar {
     internal: *mut nk_style_scrollbar,
+    p: PhantomData<nk_style_scrollbar>,
 }
 
 impl NkStyleScrollbar {
     fn new(s: *mut nk_style_scrollbar) -> NkStyleScrollbar {
-        NkStyleScrollbar { internal: s }
+        NkStyleScrollbar {
+            internal: s,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -909,8 +933,8 @@ impl NkStyleScrollbar {
         NkStyleItemRef::new(unsafe { &(*self.internal).active as *const _ as *mut nk_style_item })
     }
 
-    pub fn border_color(&self) -> NkColor {
-        unsafe { (*self.internal).border_color }
+    pub fn border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).border_color }
     }
 
     pub fn cursor_normal(&self) -> NkStyleItemRef {
@@ -925,8 +949,8 @@ impl NkStyleScrollbar {
         NkStyleItemRef::new(unsafe { &(*self.internal).cursor_active as *const _ as *mut nk_style_item })
     }
 
-    pub fn cursor_border_color(&self) -> NkColor {
-        unsafe { (*self.internal).cursor_border_color }
+    pub fn cursor_border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).cursor_border_color }
     }
 
     pub fn border(&self) -> f32 {
@@ -945,8 +969,8 @@ impl NkStyleScrollbar {
         unsafe { (*self.internal).rounding_cursor }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
     pub fn show_buttons(&self) -> bool {
@@ -961,12 +985,12 @@ impl NkStyleScrollbar {
         NkStyleButton::new(unsafe { &mut (*self.internal).dec_button })
     }
 
-    pub fn inc_symbol(&self) -> NkSymbolType {
-        unsafe { (*self.internal).inc_symbol }
+    pub fn inc_symbol(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).inc_symbol }
     }
 
-    pub fn dec_symbol(&self) -> NkSymbolType {
-        unsafe { (*self.internal).dec_symbol }
+    pub fn dec_symbol(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).dec_symbol }
     }
 
     // ===== setters =====
@@ -1060,11 +1084,15 @@ impl NkStyleScrollbar {
 
 pub struct NkStyleChart {
     internal: *mut nk_style_chart,
+    p: PhantomData<nk_style_chart>,
 }
 
 impl NkStyleChart {
     fn new(s: *mut nk_style_chart) -> NkStyleChart {
-        NkStyleChart { internal: s }
+        NkStyleChart {
+            internal: s,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -1073,16 +1101,16 @@ impl NkStyleChart {
         NkStyleItemRef::new(unsafe { &(*self.internal).background as *const _ as *mut nk_style_item })
     }
 
-    pub fn border_color(&self) -> NkColor {
-        unsafe { (*self.internal).border_color }
+    pub fn border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).border_color }
     }
 
-    pub fn selected_color(&self) -> NkColor {
-        unsafe { (*self.internal).selected_color }
+    pub fn selected_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).selected_color }
     }
 
-    pub fn color(&self) -> NkColor {
-        unsafe { (*self.internal).color }
+    pub fn color(&self) -> &NkColor {
+        unsafe { &(*self.internal).color }
     }
 
     pub fn border(&self) -> f32 {
@@ -1093,8 +1121,8 @@ impl NkStyleChart {
         unsafe { (*self.internal).rounding }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
     // ===== setters =====
@@ -1134,11 +1162,15 @@ impl NkStyleChart {
 
 pub struct NkStyleEdit {
     internal: *mut nk_style_edit,
+    p: PhantomData<nk_style_edit>,
 }
 
 impl NkStyleEdit {
     fn new(s: *mut nk_style_edit) -> NkStyleEdit {
-        NkStyleEdit { internal: s }
+        NkStyleEdit {
+            internal: s,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -1155,56 +1187,56 @@ impl NkStyleEdit {
         NkStyleItemRef::new(unsafe { &(*self.internal).active as *const _ as *mut nk_style_item })
     }
 
-    pub fn border_color(&self) -> NkColor {
-        unsafe { (*self.internal).border_color }
+    pub fn border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).border_color }
     }
 
     pub fn scrollbar(&self) -> NkStyleScrollbar {
         NkStyleScrollbar::new(unsafe { &mut (*self.internal).scrollbar })
     }
 
-    pub fn cursor_normal(&self) -> NkColor {
-        unsafe { (*self.internal).cursor_normal }
+    pub fn cursor_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).cursor_normal }
     }
 
-    pub fn cursor_hover(&self) -> NkColor {
-        unsafe { (*self.internal).cursor_hover }
+    pub fn cursor_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).cursor_hover }
     }
 
-    pub fn cursor_text_normal(&self) -> NkColor {
-        unsafe { (*self.internal).cursor_text_normal }
+    pub fn cursor_text_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).cursor_text_normal }
     }
 
-    pub fn cursor_text_hover(&self) -> NkColor {
-        unsafe { (*self.internal).cursor_text_hover }
+    pub fn cursor_text_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).cursor_text_hover }
     }
 
-    pub fn text_normal(&self) -> NkColor {
-        unsafe { (*self.internal).text_normal }
+    pub fn text_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_normal }
     }
 
-    pub fn text_hover(&self) -> NkColor {
-        unsafe { (*self.internal).text_hover }
+    pub fn text_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_hover }
     }
 
-    pub fn text_active(&self) -> NkColor {
-        unsafe { (*self.internal).text_active }
+    pub fn text_active(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_active }
     }
 
-    pub fn selected_normal(&self) -> NkColor {
-        unsafe { (*self.internal).selected_normal }
+    pub fn selected_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).selected_normal }
     }
 
-    pub fn selected_hover(&self) -> NkColor {
-        unsafe { (*self.internal).selected_hover }
+    pub fn selected_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).selected_hover }
     }
 
-    pub fn selected_text_normal(&self) -> NkColor {
-        unsafe { (*self.internal).selected_text_normal }
+    pub fn selected_text_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).selected_text_normal }
     }
 
-    pub fn selected_text_hover(&self) -> NkColor {
-        unsafe { (*self.internal).selected_text_hover }
+    pub fn selected_text_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).selected_text_hover }
     }
 
     pub fn border(&self) -> f32 {
@@ -1219,12 +1251,12 @@ impl NkStyleEdit {
         unsafe { (*self.internal).cursor_size }
     }
 
-    pub fn scrollbar_size(&self) -> NkVec2 {
-        unsafe { (*self.internal).scrollbar_size }
+    pub fn scrollbar_size(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).scrollbar_size }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
     pub fn row_padding(&self) -> f32 {
@@ -1350,11 +1382,15 @@ impl NkStyleEdit {
 
 pub struct NkStyleProperty {
     internal: *mut nk_style_property,
+    p: PhantomData<nk_style_property>,
 }
 
 impl NkStyleProperty {
     fn new(s: *mut nk_style_property) -> NkStyleProperty {
-        NkStyleProperty { internal: s }
+        NkStyleProperty {
+            internal: s,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -1371,8 +1407,8 @@ impl NkStyleProperty {
         NkStyleItemRef::new(unsafe { &(*self.internal).active as *const _ as *mut nk_style_item })
     }
 
-    pub fn border_color(&self) -> NkColor {
-        unsafe { (*self.internal).border_color }
+    pub fn border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).border_color }
     }
 
     pub fn label_normal(&self) -> NkStyleItemRef {
@@ -1387,12 +1423,12 @@ impl NkStyleProperty {
         NkStyleItemRef::new(unsafe { &(*self.internal).label_active as *const _ as *mut nk_style_item })
     }
 
-    pub fn sym_left(&self) -> NkSymbolType {
-        unsafe { (*self.internal).sym_left }
+    pub fn sym_left(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).sym_left }
     }
 
-    pub fn sym_right(&self) -> NkSymbolType {
-        unsafe { (*self.internal).sym_right }
+    pub fn sym_right(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).sym_right }
     }
 
     pub fn border(&self) -> f32 {
@@ -1403,8 +1439,8 @@ impl NkStyleProperty {
         unsafe { (*self.internal).rounding }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
     pub fn edit(&self) -> NkStyleEdit {
@@ -1488,11 +1524,15 @@ impl NkStyleProperty {
 
 pub struct NkStyleProgress {
     internal: *mut nk_style_progress,
+    p: PhantomData<nk_style_progress>,
 }
 
 impl NkStyleProgress {
     fn new(s: *mut nk_style_progress) -> NkStyleProgress {
-        NkStyleProgress { internal: s }
+        NkStyleProgress {
+            internal: s,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -1509,8 +1549,8 @@ impl NkStyleProgress {
         NkStyleItemRef::new(unsafe { &(*self.internal).active as *const _ as *mut nk_style_item })
     }
 
-    pub fn border_color(&self) -> NkColor {
-        unsafe { (*self.internal).border_color }
+    pub fn border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).border_color }
     }
 
     pub fn cursor_normal(&self) -> NkStyleItemRef {
@@ -1525,8 +1565,8 @@ impl NkStyleProgress {
         NkStyleItemRef::new(unsafe { &(*self.internal).cursor_active as *const _ as *mut nk_style_item })
     }
 
-    pub fn cursor_border_color(&self) -> NkColor {
-        unsafe { (*self.internal).cursor_border_color }
+    pub fn cursor_border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).cursor_border_color }
     }
 
     pub fn border(&self) -> f32 {
@@ -1545,8 +1585,8 @@ impl NkStyleProgress {
         unsafe { (*self.internal).cursor_rounding }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
     // ===== setters =====
@@ -1620,11 +1660,15 @@ impl NkStyleProgress {
 
 pub struct NkStyleSlider {
     internal: *mut nk_style_slider,
+    p: PhantomData<nk_style_slider>,
 }
 
 impl NkStyleSlider {
     fn new(s: *mut nk_style_slider) -> NkStyleSlider {
-        NkStyleSlider { internal: s }
+        NkStyleSlider {
+            internal: s,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -1641,24 +1685,24 @@ impl NkStyleSlider {
         NkStyleItemRef::new(unsafe { &(*self.internal).active as *const _ as *mut nk_style_item })
     }
 
-    pub fn border_color(&self) -> NkColor {
-        unsafe { (*self.internal).border_color }
+    pub fn border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).border_color }
     }
 
-    pub fn bar_normal(&self) -> NkColor {
-        unsafe { (*self.internal).bar_normal }
+    pub fn bar_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).bar_normal }
     }
 
-    pub fn bar_hover(&self) -> NkColor {
-        unsafe { (*self.internal).bar_hover }
+    pub fn bar_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).bar_hover }
     }
 
-    pub fn bar_active(&self) -> NkColor {
-        unsafe { (*self.internal).bar_active }
+    pub fn bar_active(&self) -> &NkColor {
+        unsafe { &(*self.internal).bar_active }
     }
 
-    pub fn bar_filled(&self) -> NkColor {
-        unsafe { (*self.internal).bar_filled }
+    pub fn bar_filled(&self) -> &NkColor {
+        unsafe { &(*self.internal).bar_filled }
     }
 
     pub fn cursor_normal(&self) -> NkStyleItemRef {
@@ -1685,16 +1729,16 @@ impl NkStyleSlider {
         unsafe { (*self.internal).bar_height }
     }
 
-    pub fn spacing(&self) -> NkVec2 {
-        unsafe { (*self.internal).spacing }
+    pub fn spacing(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).spacing }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
-    pub fn cursor_size(&self) -> NkVec2 {
-        unsafe { (*self.internal).cursor_size }
+    pub fn cursor_size(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).cursor_size }
     }
 
     pub fn show_buttons(&self) -> bool {
@@ -1709,12 +1753,12 @@ impl NkStyleSlider {
         NkStyleButton::new(unsafe { &mut (*self.internal).dec_button })
     }
 
-    pub fn inc_symbol(&self) -> NkSymbolType {
-        unsafe { (*self.internal).inc_symbol }
+    pub fn inc_symbol(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).inc_symbol }
     }
 
-    pub fn dec_symbol(&self) -> NkSymbolType {
-        unsafe { (*self.internal).dec_symbol }
+    pub fn dec_symbol(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).dec_symbol }
     }
 
     // ===== setters =====
@@ -1824,11 +1868,15 @@ impl NkStyleSlider {
 
 pub struct NkStyleSelectable {
     internal: *mut nk_style_selectable,
+    p: PhantomData<nk_style_selectable>,
 }
 
 impl NkStyleSelectable {
     fn new(s: *mut nk_style_selectable) -> NkStyleSelectable {
-        NkStyleSelectable { internal: s }
+        NkStyleSelectable {
+            internal: s,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -1857,32 +1905,32 @@ impl NkStyleSelectable {
         NkStyleItemRef::new(unsafe { &(*self.internal).pressed_active as *const _ as *mut nk_style_item })
     }
 
-    pub fn text_normal(&self) -> NkColor {
-        unsafe { (*self.internal).text_normal }
+    pub fn text_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_normal }
     }
 
-    pub fn text_hover(&self) -> NkColor {
-        unsafe { (*self.internal).text_hover }
+    pub fn text_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_hover }
     }
 
-    pub fn text_pressed(&self) -> NkColor {
-        unsafe { (*self.internal).text_pressed }
+    pub fn text_pressed(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_pressed }
     }
 
-    pub fn text_normal_active(&self) -> NkColor {
-        unsafe { (*self.internal).text_normal_active }
+    pub fn text_normal_active(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_normal_active }
     }
 
-    pub fn text_hover_active(&self) -> NkColor {
-        unsafe { (*self.internal).text_hover_active }
+    pub fn text_hover_active(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_hover_active }
     }
 
-    pub fn text_pressed_active(&self) -> NkColor {
-        unsafe { (*self.internal).text_pressed_active }
+    pub fn text_pressed_active(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_pressed_active }
     }
 
-    pub fn text_background(&self) -> NkColor {
-        unsafe { (*self.internal).text_background }
+    pub fn text_background(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_background }
     }
 
     pub fn text_alignment(&self) -> u32 {
@@ -1893,16 +1941,16 @@ impl NkStyleSelectable {
         unsafe { (*self.internal).rounding }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
-    pub fn touch_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).touch_padding }
+    pub fn touch_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).touch_padding }
     }
 
-    pub fn image_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).image_padding }
+    pub fn image_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).image_padding }
     }
 
     // ===== setters =====
@@ -1996,11 +2044,15 @@ impl NkStyleSelectable {
 
 pub struct NkStyleButton {
     internal: *mut nk_style_button,
+    p: PhantomData<nk_style_button>,
 }
 
 impl NkStyleButton {
     fn new(s: *mut nk_style_button) -> NkStyleButton {
-        NkStyleButton { internal: s }
+        NkStyleButton {
+            internal: s,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -2017,24 +2069,24 @@ impl NkStyleButton {
         NkStyleItemRef::new(unsafe { &(*self.internal).active as *const _ as *mut nk_style_item })
     }
 
-    pub fn border_color(&self) -> NkColor {
-        unsafe { (*self.internal).border_color }
+    pub fn border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).border_color }
     }
 
-    pub fn text_background(&self) -> NkColor {
-        unsafe { (*self.internal).text_background }
+    pub fn text_background(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_background }
     }
 
-    pub fn text_normal(&self) -> NkColor {
-        unsafe { (*self.internal).text_normal }
+    pub fn text_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_normal }
     }
 
-    pub fn text_hover(&self) -> NkColor {
-        unsafe { (*self.internal).text_hover }
+    pub fn text_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_hover }
     }
 
-    pub fn text_active(&self) -> NkColor {
-        unsafe { (*self.internal).text_active }
+    pub fn text_active(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_active }
     }
 
     pub fn text_alignment(&self) -> u32 {
@@ -2049,16 +2101,16 @@ impl NkStyleButton {
         unsafe { (*self.internal).rounding }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
-    pub fn touch_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).touch_padding }
+    pub fn touch_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).touch_padding }
     }
 
-    pub fn image_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).image_padding }
+    pub fn image_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).image_padding }
     }
 
     // ===== setters =====
@@ -2130,11 +2182,15 @@ impl NkStyleButton {
 
 pub struct NkStyleToggle {
     internal: *mut nk_style_toggle,
+    p: PhantomData<nk_style_toggle>,
 }
 
 impl NkStyleToggle {
     fn new(s: *mut nk_style_toggle) -> NkStyleToggle {
-        NkStyleToggle { internal: s }
+        NkStyleToggle {
+            internal: s,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -2151,8 +2207,8 @@ impl NkStyleToggle {
         NkStyleItemRef::new(unsafe { &(*self.internal).active as *const _ as *mut nk_style_item })
     }
 
-    pub fn border_color(&self) -> NkColor {
-        unsafe { (*self.internal).border_color }
+    pub fn border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).border_color }
     }
 
     pub fn cursor_normal(&self) -> NkStyleItemRef {
@@ -2163,20 +2219,20 @@ impl NkStyleToggle {
         NkStyleItemRef::new(unsafe { &(*self.internal).cursor_hover as *const _ as *mut nk_style_item })
     }
 
-    pub fn text_normal(&self) -> NkColor {
-        unsafe { (*self.internal).text_normal }
+    pub fn text_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_normal }
     }
 
-    pub fn text_hover(&self) -> NkColor {
-        unsafe { (*self.internal).text_hover }
+    pub fn text_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_hover }
     }
 
-    pub fn text_active(&self) -> NkColor {
-        unsafe { (*self.internal).text_active }
+    pub fn text_active(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_active }
     }
 
-    pub fn text_background(&self) -> NkColor {
-        unsafe { (*self.internal).text_background }
+    pub fn text_background(&self) -> &NkColor {
+        unsafe { &(*self.internal).text_background }
     }
 
     pub fn text_alignment(&self) -> u32 {
@@ -2191,12 +2247,12 @@ impl NkStyleToggle {
         unsafe { (*self.internal).border }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
-    pub fn touch_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).touch_padding }
+    pub fn touch_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).touch_padding }
     }
 
     // ===== setters =====
@@ -2276,11 +2332,15 @@ impl NkStyleToggle {
 
 pub struct NkStyleWindowHeader {
     internal: *mut nk_style_window_header,
+    p: PhantomData<nk_style_window_header>,
 }
 
 impl NkStyleWindowHeader {
     fn new(h: *mut nk_style_window_header) -> NkStyleWindowHeader {
-        NkStyleWindowHeader { internal: h }
+        NkStyleWindowHeader {
+            internal: h,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -2305,44 +2365,44 @@ impl NkStyleWindowHeader {
         NkStyleButton::new(unsafe { &mut (*self.internal).minimize_button })
     }
 
-    pub fn close_symbol(&self) -> NkSymbolType {
-        unsafe { (*self.internal).close_symbol }
+    pub fn close_symbol(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).close_symbol }
     }
 
-    pub fn minimize_symbol(&self) -> NkSymbolType {
-        unsafe { (*self.internal).minimize_symbol }
+    pub fn minimize_symbol(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).minimize_symbol }
     }
 
-    pub fn maximize_symbol(&self) -> NkSymbolType {
-        unsafe { (*self.internal).maximize_symbol }
+    pub fn maximize_symbol(&self) -> &NkSymbolType {
+        unsafe { &(*self.internal).maximize_symbol }
     }
 
-    pub fn label_normal(&self) -> NkColor {
-        unsafe { (*self.internal).label_normal }
+    pub fn label_normal(&self) -> &NkColor {
+        unsafe { &(*self.internal).label_normal }
     }
 
-    pub fn label_hover(&self) -> NkColor {
-        unsafe { (*self.internal).label_hover }
+    pub fn label_hover(&self) -> &NkColor {
+        unsafe { &(*self.internal).label_hover }
     }
 
-    pub fn label_active(&self) -> NkColor {
-        unsafe { (*self.internal).label_active }
+    pub fn label_active(&self) -> &NkColor {
+        unsafe { &(*self.internal).label_active }
     }
 
-    pub fn align(&self) -> NkStyleHeaderAlign {
-        unsafe { (*self.internal).align }
+    pub fn align(&self) -> &NkStyleHeaderAlign {
+        unsafe { &(*self.internal).align }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
-    pub fn label_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).label_padding }
+    pub fn label_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).label_padding }
     }
 
-    pub fn spacing(&self) -> NkVec2 {
-        unsafe { (*self.internal).spacing }
+    pub fn spacing(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).spacing }
     }
 
     // ===== setters =====
@@ -2411,11 +2471,15 @@ impl NkStyleWindowHeader {
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub struct NkStyleWindow {
     internal: *mut nk_style_window,
+    p: PhantomData<nk_style_window>,
 }
 
 impl NkStyleWindow {
     fn new(w: *mut nk_style_window) -> NkStyleWindow {
-        NkStyleWindow { internal: w }
+        NkStyleWindow {
+            internal: w,
+            p: PhantomData,
+        }
     }
 
     // ===== getters =====
@@ -2428,36 +2492,36 @@ impl NkStyleWindow {
         NkStyleItem { internal: unsafe { (*self.internal).fixed_background } }
     }
 
-    pub fn background(&self) -> NkColor {
-        unsafe { (*self.internal).background }
+    pub fn background(&self) -> &NkColor {
+        unsafe { &(*self.internal).background }
     }
 
-    pub fn border_color(&self) -> NkColor {
-        unsafe { (*self.internal).border_color }
+    pub fn border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).border_color }
     }
 
-    pub fn popup_border_color(&self) -> NkColor {
-        unsafe { (*self.internal).popup_border_color }
+    pub fn popup_border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).popup_border_color }
     }
 
-    pub fn combo_border_color(&self) -> NkColor {
-        unsafe { (*self.internal).combo_border_color }
+    pub fn combo_border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).combo_border_color }
     }
 
-    pub fn contextual_border_color(&self) -> NkColor {
-        unsafe { (*self.internal).contextual_border_color }
+    pub fn contextual_border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).contextual_border_color }
     }
 
-    pub fn menu_border_color(&self) -> NkColor {
-        unsafe { (*self.internal).menu_border_color }
+    pub fn menu_border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).menu_border_color }
     }
 
-    pub fn group_border_color(&self) -> NkColor {
-        unsafe { (*self.internal).group_border_color }
+    pub fn group_border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).group_border_color }
     }
 
-    pub fn tooltip_border_color(&self) -> NkColor {
-        unsafe { (*self.internal).tooltip_border_color }
+    pub fn tooltip_border_color(&self) -> &NkColor {
+        unsafe { &(*self.internal).tooltip_border_color }
     }
 
     pub fn scaler(&self) -> NkStyleItemRef {
@@ -2496,44 +2560,44 @@ impl NkStyleWindow {
         unsafe { (*self.internal).rounding }
     }
 
-    pub fn spacing(&self) -> NkVec2 {
-        unsafe { (*self.internal).spacing }
+    pub fn spacing(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).spacing }
     }
 
-    pub fn scrollbar_size(&self) -> NkVec2 {
-        unsafe { (*self.internal).scrollbar_size }
+    pub fn scrollbar_size(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).scrollbar_size }
     }
 
-    pub fn min_size(&self) -> NkVec2 {
-        unsafe { (*self.internal).min_size }
+    pub fn min_size(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).min_size }
     }
 
-    pub fn padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).padding }
+    pub fn padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).padding }
     }
 
-    pub fn group_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).group_padding }
+    pub fn group_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).group_padding }
     }
 
-    pub fn popup_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).popup_padding }
+    pub fn popup_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).popup_padding }
     }
 
-    pub fn combo_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).combo_padding }
+    pub fn combo_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).combo_padding }
     }
 
-    pub fn contextual_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).contextual_padding }
+    pub fn contextual_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).contextual_padding }
     }
 
-    pub fn menu_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).menu_padding }
+    pub fn menu_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).menu_padding }
     }
 
-    pub fn tooltip_padding(&self) -> NkVec2 {
-        unsafe { (*self.internal).tooltip_padding }
+    pub fn tooltip_padding(&self) -> &NkVec2 {
+        unsafe { &(*self.internal).tooltip_padding }
     }
 
     // ===== setters =====
@@ -2696,11 +2760,15 @@ impl NkStyleWindow {
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub struct NkDrawList {
     internal: *mut nk_draw_list,
+    p: PhantomData<nk_draw_list>,
 }
 
 impl NkDrawList {
     fn new(i: *mut nk_draw_list) -> NkDrawList {
-        NkDrawList { internal: i }
+        NkDrawList {
+            internal: i,
+            p: PhantomData,
+        }
     }
 
     pub fn init(&mut self) {
@@ -2730,6 +2798,7 @@ impl NkDrawList {
             NkDrawCommand {
                 internal: nk__draw_list_begin(self.internal as *const nk_draw_list,
                                               &buf.internal as *const nk_buffer),
+                p: PhantomData,
             }
         }
     }
@@ -2740,6 +2809,7 @@ impl NkDrawList {
                 internal: nk__draw_list_next(prev.internal,
                                              &buf.internal as *const nk_buffer,
                                              self.internal as *const nk_draw_list),
+                p: PhantomData,
             }
         }
     }
@@ -2938,11 +3008,15 @@ impl NkCursorMap {
 #[derive(Debug, Clone, Copy)]
 pub struct NkCursor {
     internal: *const nk_cursor,
+    p: PhantomData<nk_cursor>,
 }
 
 impl NkCursor {
     fn new(c: *const nk_cursor) -> NkCursor {
-        NkCursor { internal: c }
+        NkCursor {
+            internal: c,
+            p: PhantomData,
+        }
     }
 }
 
@@ -2964,7 +3038,6 @@ impl NkAllocator {
         unsafe {
             *(a.internal.userdata.ptr.as_mut()) = ::std::ptr::null_mut();
         }
-
         a
     }
 
@@ -2977,7 +3050,6 @@ impl NkAllocator {
         unsafe {
             *(a.internal.userdata.ptr.as_mut()) = ::std::ptr::null_mut();
         }
-
         a
     }
 }
@@ -3062,11 +3134,15 @@ impl NkDrawVertexLayoutElements {
 #[derive(Debug, Clone, Copy)]
 pub struct NkStyleItemRef {
     internal: *mut nk_style_item,
+    p: PhantomData<nk_style_item>,
 }
 
 impl NkStyleItemRef {
     fn new(i: *mut nk_style_item) -> NkStyleItemRef {
-        NkStyleItemRef { internal: i }
+        NkStyleItemRef {
+            internal: i,
+            p: PhantomData,
+        }
     }
 }
 
@@ -3102,11 +3178,15 @@ impl ::std::convert::From<NkStyleItemRef> for NkStyleItem {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkTextEdit {
     internal: *mut nk_text_edit,
+    p: PhantomData<nk_text_edit>,
 }
 
 impl NkTextEdit {
     fn new(t: *mut nk_text_edit) -> NkTextEdit {
-        NkTextEdit { internal: t }
+        NkTextEdit {
+            internal: t,
+            p: PhantomData,
+        }
     }
 
     pub fn init(&mut self, arg2: &mut NkAllocator, size: usize) {
@@ -3227,12 +3307,12 @@ impl NkFontConfig {
         unsafe { ::std::char::from_u32_unchecked(self.internal.fallback_glyph) }
     }
 
-    pub fn spacing(&self) -> NkVec2 {
-        self.internal.spacing
+    pub fn spacing(&self) -> &NkVec2 {
+        &self.internal.spacing
     }
 
-    pub fn coord_type(&self) -> NkFontCoordType {
-        self.internal.coord_type
+    pub fn coord_type(&self) -> &NkFontCoordType {
+        &self.internal.coord_type
     }
 
     pub fn is_pixel_snap(&self) -> bool {
@@ -3492,25 +3572,21 @@ impl NkBuffer {
 
     pub fn with_size(alloc: &mut NkAllocator, buffer_size: usize) -> NkBuffer {
         let mut a = NkBuffer::default();
-
         unsafe {
             nk_buffer_init(&mut a.internal as *mut nk_buffer,
                            &mut alloc.internal as *const nk_allocator,
                            buffer_size);
         }
-
         a
     }
 
     pub fn with_fixed(memory: &mut [u8]) -> NkBuffer {
         let mut a = NkBuffer::default();
-
         unsafe {
             nk_buffer_init_fixed(&mut a.internal as *mut nk_buffer,
                                  memory as *mut _ as *mut ::std::os::raw::c_void,
                                  memory.len());
         }
-
         a
     }
 
@@ -3540,7 +3616,7 @@ impl NkBuffer {
     // -> *mut ::std::os::raw::c_void;
     // pub fn nk_buffer_memory_const(arg1: *const nk_buffer)
     // -> *const ::std::os::raw::c_void;
-    // pub fn nk_buffer_total(arg1: *mut nk_buffer) -> nk_size;
+    // pub fn nk_buffer_total(arg1: *mut nk_buffer) -> &Nk_size;
     //
     // pub fn nk_buffer_init(arg1: *mut nk_buffer, arg2: *const nk_allocator,
     // size: nk_size);
@@ -3580,7 +3656,10 @@ impl NkContext {
     }
 
     pub fn style(&mut self) -> NkStyle {
-        NkStyle { internal: &mut self.internal.style }
+        NkStyle {
+            internal: &mut self.internal.style,
+            p: PhantomData,
+        }
     }
 
     pub fn draw_list(&mut self) -> NkDrawList {
@@ -3654,13 +3733,13 @@ impl NkContext {
         unsafe { nk_window_get_height(&self.internal as *const nk_context) }
     }
 
-    pub fn window_get_panel(&mut self) -> Option<NkPanelRef> {
+    pub fn window_get_panel(&mut self) -> Option<NkPanel> {
         let p = unsafe { nk_window_get_panel(&mut self.internal as *mut nk_context) };
 
         if p.is_null() {
             None
         } else {
-            Some(NkPanelRef::new(p))
+            Some(NkPanel::new(p))
         }
     }
 
@@ -3871,11 +3950,7 @@ impl NkContext {
     }
 
     pub fn nk_group_begin(&mut self, title: NkString, flags: NkFlags) -> i32 {
-        unsafe {
-            nk_group_begin(&mut self.internal as *mut nk_context,
-                           title.as_ptr(),
-                           flags)
-        }
+        unsafe { nk_group_begin(&mut self.internal as *mut nk_context, title.as_ptr(), flags) }
     }
 
     pub fn group_end(&mut self) {
@@ -4456,7 +4531,7 @@ impl NkContext {
         unsafe { nk_chart_push(&mut self.internal as *mut nk_context, value) }
     }
 
-    pub fn chart_push_slot(&mut self, value: f32, count: i32) -> nk_flags {
+    pub fn chart_push_slot(&mut self, value: f32, count: i32) -> NkFlags {
         unsafe { nk_chart_push_slot(&mut self.internal as *mut nk_context, value, count) }
     }
 
@@ -4546,19 +4621,11 @@ impl NkContext {
     }
 
     pub fn combo_begin_color(&mut self, color: NkColor, size: NkVec2) -> bool {
-        unsafe {
-            nk_combo_begin_color(&mut self.internal as *mut nk_context,
-                                 color,
-                                 size) > 0
-        }
+        unsafe { nk_combo_begin_color(&mut self.internal as *mut nk_context, color, size) > 0 }
     }
 
     pub fn combo_begin_symbol(&mut self, sym: NkSymbolType, size: NkVec2) -> bool {
-        unsafe {
-            nk_combo_begin_symbol(&mut self.internal as *mut nk_context,
-                                  sym,
-                                  size) > 0
-        }
+        unsafe { nk_combo_begin_symbol(&mut self.internal as *mut nk_context, sym, size) > 0 }
     }
 
     pub fn combo_begin_symbol_label(&mut self, label: NkString, sym: NkSymbolType, size: NkVec2) -> bool {
@@ -4581,11 +4648,7 @@ impl NkContext {
     }
 
     pub fn combo_begin_image(&mut self, img: NkImage, size: NkVec2) -> bool {
-        unsafe {
-            nk_combo_begin_image(&mut self.internal as *mut nk_context,
-                                 img.internal,
-                                 size) > 0
-        }
+        unsafe { nk_combo_begin_image(&mut self.internal as *mut nk_context, img.internal, size) > 0 }
     }
 
     pub fn combo_begin_image_label(&mut self, label: NkString, img: NkImage, size: NkVec2) -> bool {
@@ -4753,10 +4816,7 @@ impl NkContext {
     }
 
     pub fn tooltip_begin(&mut self, width: f32) -> bool {
-        unsafe {
-            nk_tooltip_begin(&mut self.internal as *mut nk_context,
-                             width) > 0
-        }
+        unsafe { nk_tooltip_begin(&mut self.internal as *mut nk_context, width) > 0 }
     }
 
     pub fn tooltip_end(&mut self) {
@@ -4973,7 +5033,8 @@ impl NkContext {
 
     pub fn input_glyph(&mut self, g: NkGlyph) {
         unsafe {
-            nk_input_glyph(&mut self.internal as *mut nk_context, &g[0] as *const _ as *mut i8);
+            nk_input_glyph(&mut self.internal as *mut nk_context,
+                           &g[0] as *const _ as *mut i8);
         }
     }
 
@@ -4997,7 +5058,8 @@ impl NkContext {
 
     pub fn style_from_table(&mut self, table: &NkColorMap) {
         unsafe {
-            nk_style_from_table(&mut self.internal as *mut nk_context, &table.internal[0] as *const nk_color);
+            nk_style_from_table(&mut self.internal as *mut nk_context,
+                                &table.internal[0] as *const nk_color);
         }
     }
 
@@ -5154,7 +5216,10 @@ impl NkContext {
         if n.is_null() {
             None
         } else {
-            Some(NkDrawCommand { internal: n })
+            Some(NkDrawCommand {
+                internal: n,
+                p: PhantomData,
+            })
         }
     }
     pub fn draw_next(&self, prev: &NkDrawCommand, buf: &NkBuffer) -> Option<NkDrawCommand> {
@@ -5167,7 +5232,10 @@ impl NkContext {
         if n.is_null() {
             None
         } else {
-            Some(NkDrawCommand { internal: n })
+            Some(NkDrawCommand {
+                internal: n,
+                p: PhantomData,
+            })
         }
     }
 
@@ -5288,11 +5356,15 @@ impl<'a> Iterator for NkDrawCommandIntoIter<'a> {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkWindow {
     internal: *mut nk_window,
+    p: PhantomData<nk_window>,
 }
 
 impl NkWindow {
     fn new(w: *mut nk_window) -> NkWindow {
-        NkWindow { internal: w }
+        NkWindow {
+            internal: w,
+            p: PhantomData,
+        }
     }
 
     // pub seq: ::std::os::raw::c_uint,
@@ -5334,14 +5406,14 @@ impl NkWindow {
             ::std::str::from_utf8_unchecked(&name[0..len])
         }
     }
-    pub fn flags(&self) -> NkFlags {
-        unsafe { (*self.internal).flags }
+    pub fn flags(&self) -> &NkFlags {
+        unsafe { &(*self.internal).flags }
     }
-    pub fn bounds(&self) -> NkRect {
-        unsafe { (*self.internal).bounds }
+    pub fn bounds(&self) -> &NkRect {
+        unsafe { &(*self.internal).bounds }
     }
-    pub fn scrollbar(&self) -> NkScroll {
-        unsafe { (*self.internal).scrollbar }
+    pub fn scrollbar(&self) -> &NkScroll {
+        unsafe { &(*self.internal).scrollbar }
     }
     pub fn scrollbar_hiding_timer(&self) -> f32 {
         unsafe { (*self.internal).scrollbar_hiding_timer }
@@ -5384,37 +5456,338 @@ impl NkWindow {
 
 // =============================================================================================
 
-#[derive(Debug, Clone, Copy)]
-pub struct NkPanel {
-    internal: nk_panel,
+// #[derive(Debug, Clone, Copy)]  //TODO mb remove
+// pub struct NkPanel {
+// internal: nk_panel,
+// }
+//
+// impl Default for NkPanel {
+// fn default() -> Self {
+// NkPanel { internal: nk_panel::default() }
+// }
+// }
+//
+// impl NkPanel {
+// pub fn bounds(&self) -> &NkRect {
+// self.internal.bounds
+// }
+// }
+
+// =============================================================================================
+
+pub struct NkRowLayout {
+    internal: *mut nk_row_layout,
+    p: PhantomData<nk_row_layout>,
 }
 
-impl Default for NkPanel {
-    fn default() -> Self {
-        NkPanel { internal: nk_panel::default() }
+impl NkRowLayout {
+    fn new(i: *mut nk_row_layout) -> NkRowLayout {
+        NkRowLayout {
+            internal: i,
+            p: Default::default(),
+        }
     }
-}
 
-impl NkPanel {
-    pub fn bounds(&self) -> NkRect {
-        self.internal.bounds
+    pub fn layout_type(&self) -> &NkPanelRowLayoutType {
+        unsafe { &(*self.internal).type_ }
+    }
+    pub fn layout_type_mut(&mut self) -> &mut NkPanelRowLayoutType {
+        unsafe { &mut (*self.internal).type_ }
+    }
+
+    pub fn index(&self) -> i32 {
+        unsafe { (*self.internal).index }
+    }
+    pub fn set_index(&mut self, i: i32) {
+        unsafe { (*self.internal).index = i }
+    }
+
+    pub fn height(&self) -> f32 {
+        unsafe { (*self.internal).height }
+    }
+    pub fn set_height(&mut self, i: f32) {
+        unsafe { (*self.internal).height = i }
+    }
+
+    pub fn columns(&self) -> i32 {
+        unsafe { (*self.internal).columns }
+    }
+    pub fn set_columns(&mut self, i: i32) {
+        unsafe { (*self.internal).columns = i }
+    }
+
+    pub fn ratio(&self) -> &f32 {
+        unsafe { &*(*self.internal).ratio }
+    }
+
+    pub fn item_width(&self) -> f32 {
+        unsafe { (*self.internal).item_width }
+    }
+    pub fn set_item_width(&mut self, i: f32) {
+        unsafe { (*self.internal).item_width = i }
+    }
+
+    pub fn item_height(&self) -> f32 {
+        unsafe { (*self.internal).item_height }
+    }
+    pub fn set_item_height(&mut self, i: f32) {
+        unsafe { (*self.internal).item_height = i }
+    }
+
+    pub fn item_offset(&self) -> f32 {
+        unsafe { (*self.internal).item_offset }
+    }
+    pub fn set_item_offset(&mut self, i: f32) {
+        unsafe { (*self.internal).item_offset = i }
+    }
+
+    pub fn filled(&self) -> f32 {
+        unsafe { (*self.internal).filled }
+    }
+    pub fn set_filled(&mut self, i: f32) {
+        unsafe { (*self.internal).filled = i }
+    }
+
+    pub fn item(&self) -> &NkRect {
+        unsafe { &(*self.internal).item }
+    }
+    pub fn item_mut(&mut self) -> &mut NkRect {
+        unsafe { &mut (*self.internal).item }
+    }
+
+    pub fn tree_depth(&self) -> i32 {
+        unsafe { (*self.internal).tree_depth }
+    }
+    pub fn set_tree_depth(&mut self, i: i32) {
+        unsafe { (*self.internal).tree_depth = i }
+    }
+
+    pub fn templates(&self) -> &[f32] {
+        unsafe { &(*self.internal).templates }
+    }
+    pub fn templates_mut(&mut self) -> &mut [f32] {
+        unsafe { &mut (*self.internal).templates }
     }
 }
 
 // =============================================================================================
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NkPanelRef {
+pub struct NkPanel {
     internal: *mut nk_panel,
+    p: PhantomData<nk_panel>,
 }
 
-impl NkPanelRef {
-    fn new(p: *mut nk_panel) -> NkPanelRef {
-        NkPanelRef { internal: p }
+impl NkPanel {
+    fn new(p: *mut nk_panel) -> NkPanel {
+        NkPanel {
+            internal: p,
+            p: PhantomData,
+        }
     }
 
-    pub fn bounds(&self) -> NkRect {
-        unsafe { (*self.internal).bounds }
+    pub fn bounds(&self) -> &NkRect {
+        unsafe { &(*self.internal).bounds }
+    }
+    pub fn bounds_mut(&mut self) -> &mut NkRect {
+        unsafe { &mut (*self.internal).bounds }
+    }
+    pub fn set_bounds(&mut self, b: NkRect) {
+        unsafe { (*self.internal).bounds = b }
+    }
+
+    pub fn panel_type(&self) -> &NkPanelType {
+        unsafe { &(*self.internal).type_ }
+    }
+    pub fn panel_type_mut(&mut self) -> &mut NkPanelType {
+        unsafe { &mut (*self.internal).type_ }
+    }
+    pub fn set_panel_type(&mut self, t: NkPanelType) {
+        unsafe { (*self.internal).type_ = t }
+    }
+
+    pub fn flags(&self) -> &NkFlags {
+        unsafe { &(*self.internal).flags }
+    }
+    pub fn flags_mut(&mut self) -> &mut NkFlags {
+        unsafe { &mut (*self.internal).flags }
+    }
+    pub fn set_flags(&mut self, f: NkFlags) {
+        unsafe { (*self.internal).flags = f }
+    }
+
+    pub fn offset_x(&self) -> u32 {
+        unsafe { *(*self.internal).offset_x }
+    }
+    pub fn set_offset_x(&mut self, o: u32) {
+        unsafe { *(*self.internal).offset_x = o }
+    }
+
+    pub fn offset_y(&self) -> u32 {
+        unsafe { *(*self.internal).offset_y }
+    }
+    pub fn set_offset_y(&mut self, o: u32) {
+        unsafe { *(*self.internal).offset_y = o }
+    }
+
+    pub fn at_x(&self) -> f32 {
+        unsafe { (*self.internal).at_x }
+    }
+    pub fn set_at_x(&mut self, f: f32) {
+        unsafe { (*self.internal).at_x = f }
+    }
+
+    pub fn at_y(&self) -> f32 {
+        unsafe { (*self.internal).at_y }
+    }
+    pub fn set_at_y(&mut self, f: f32) {
+        unsafe { (*self.internal).at_y = f }
+    }
+
+    pub fn max_x(&self) -> f32 {
+        unsafe { (*self.internal).max_x }
+    }
+    pub fn set_max_x(&mut self, f: f32) {
+        unsafe { (*self.internal).max_x = f }
+    }
+
+    pub fn footer_height(&self) -> f32 {
+        unsafe { (*self.internal).footer_height }
+    }
+    pub fn set_footer_height(&mut self, f: f32) {
+        unsafe { (*self.internal).footer_height = f }
+    }
+
+    pub fn header_height(&self) -> f32 {
+        unsafe { (*self.internal).header_height }
+    }
+    pub fn set_header_height(&mut self, f: f32) {
+        unsafe { (*self.internal).header_height = f }
+    }
+
+    pub fn border(&self) -> f32 {
+        unsafe { (*self.internal).border }
+    }
+    pub fn set_border(&mut self, f: f32) {
+        unsafe { (*self.internal).border = f }
+    }
+
+    pub fn has_scrolling(&self) -> bool {
+        unsafe { (*self.internal).has_scrolling == nk_true as u32 }
+    }
+    pub fn set_has_scrolling(&mut self, f: bool) {
+        unsafe { (*self.internal).has_scrolling = if f { nk_true as u32 } else { nk_false as u32 } }
+    }
+
+    pub fn clip(&self) -> &NkRect {
+        unsafe { &(*self.internal).clip }
+    }
+    pub fn clip_mut(&mut self) -> &mut NkRect {
+        unsafe { &mut (*self.internal).clip }
+    }
+    pub fn set_clip(&mut self, f: NkRect) {
+        unsafe { (*self.internal).clip = f }
+    }
+
+    pub fn menu(&self) -> &NkMenuState {
+        unsafe { &(*self.internal).menu }
+    }
+    pub fn menu_mut(&mut self) -> &mut NkMenuState {
+        unsafe { &mut (*self.internal).menu }
+    }
+    pub fn set_menu(&mut self, f: NkMenuState) {
+        unsafe { (*self.internal).menu = f }
+    }
+
+    pub fn row(&self) -> NkRowLayout {
+        // unsafe { &mut (*self.internal).row }
+        unsafe { NkRowLayout::new(&mut (*self.internal).row) }
+    }
+
+    pub fn chart(&self) -> NkChart {
+        unsafe { NkChart::new(&mut (*self.internal).chart) }
+    }
+
+    pub fn popup_buffer(&self) -> &NkPopupBuffer {
+        unsafe { &(*self.internal).popup_buffer }
+    }
+
+    pub fn popup_buffer_mut(&mut self) -> &mut NkPopupBuffer {
+        unsafe { &mut (*self.internal).popup_buffer }
+    }
+
+    pub fn buffer(&self) -> Option<NkCommandBuffer> {
+        unsafe {
+            let ptr = (*self.internal).buffer;
+            if !ptr.is_null() {
+                Some(NkCommandBuffer::new(ptr))
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn parent(&self) -> Option<NkPanel> {
+        unsafe {
+            let ptr = (*self.internal).parent;
+            if !ptr.is_null() {
+                Some(NkPanel::new(ptr))
+            } else {
+                None
+            }
+        }
+    }
+}
+
+// =============================================================================================
+
+pub struct NkChart {
+    internal: *mut nk_chart,
+    p: PhantomData<nk_chart>,
+}
+
+impl NkChart {
+    fn new(i: *mut nk_chart) -> NkChart {
+        NkChart {
+            internal: i,
+            p: PhantomData,
+        }
+    }
+
+    pub fn x(&self) -> f32 {
+        unsafe { (*self.internal).x }
+    }
+    pub fn set_x(&mut self, f: f32) {
+        unsafe { (*self.internal).x = f }
+    }
+
+    pub fn y(&self) -> f32 {
+        unsafe { (*self.internal).y }
+    }
+    pub fn set_y(&mut self, f: f32) {
+        unsafe { (*self.internal).y = f }
+    }
+
+    pub fn w(&self) -> f32 {
+        unsafe { (*self.internal).w }
+    }
+    pub fn set_w(&mut self, f: f32) {
+        unsafe { (*self.internal).w = f }
+    }
+
+    pub fn h(&self) -> f32 {
+        unsafe { (*self.internal).h }
+    }
+    pub fn set_h(&mut self, f: f32) {
+        unsafe { (*self.internal).h = f }
+    }
+
+    pub fn slot(&self) -> u32 {
+        unsafe { (*self.internal).slot as u32 }
+    }
+
+    pub fn slots(&self) -> &[NkChartSlot] {
+        unsafe { &(*self.internal).slots }
     }
 }
 
@@ -5423,11 +5796,15 @@ impl NkPanelRef {
 #[derive(Clone, Copy, PartialEq)]
 pub struct NkCommand {
     internal: *const nk_command,
+    p: PhantomData<nk_command>,
 }
 
 impl NkCommand {
     fn new(i: *const nk_command) -> NkCommand {
-        NkCommand { internal: i }
+        NkCommand {
+            internal: i,
+            p: PhantomData,
+        }
     }
 }
 
@@ -5442,11 +5819,15 @@ impl Debug for NkCommand {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkCommandBuffer {
     internal: *mut nk_command_buffer,
+    p: PhantomData<nk_command_buffer>,
 }
 
 impl NkCommandBuffer {
     fn new(b: *mut nk_command_buffer) -> NkCommandBuffer {
-        NkCommandBuffer { internal: b }
+        NkCommandBuffer {
+            internal: b,
+            p: PhantomData,
+        }
     }
 
     pub fn stroke_line(&mut self, x0: f32, y0: f32, x1: f32, y1: f32, line_thickness: f32, color: NkColor) {
@@ -5719,6 +6100,7 @@ impl NkImage {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkFontGlyph {
     internal: *const nk_font_glyph,
+    p: PhantomData<nk_font_glyph>,
 }
 
 // impl Default for NkFontGlyph {
@@ -5731,7 +6113,10 @@ pub struct NkFontGlyph {
 
 impl NkFontGlyph {
     fn new(g: *const nk_font_glyph) -> NkFontGlyph {
-        NkFontGlyph { internal: g }
+        NkFontGlyph {
+            internal: g,
+            p: PhantomData,
+        }
     }
 
     pub fn get_codepoint(&self) -> char {
@@ -5777,11 +6162,15 @@ impl NkFontGlyph {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkFont {
     internal: *mut nk_font,
+    p: PhantomData<nk_font>,
 }
 
 impl NkFont {
     fn new(font: *mut nk_font) -> NkFont {
-        NkFont { internal: font }
+        NkFont {
+            internal: font,
+            p: PhantomData,
+        }
     }
 
     pub fn find_glyph(&mut self, unicode: char) -> NkFontGlyph {
@@ -5799,11 +6188,15 @@ impl NkFont {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NkUserFont {
     internal: *mut nk_user_font,
+    p: PhantomData<nk_user_font>,
 }
 
 impl NkUserFont {
     fn new(f: *mut nk_user_font) -> NkUserFont {
-        NkUserFont { internal: f }
+        NkUserFont {
+            internal: f,
+            p: PhantomData,
+        }
     }
 }
 
