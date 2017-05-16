@@ -2,7 +2,7 @@
 
 #[macro_use]
 extern crate log;
-extern crate nuklear_sys;
+pub extern crate nuklear_sys;
 
 #[cfg(feature = "rust_allocator")]
 mod alloc_heap;
@@ -16,6 +16,7 @@ use std::marker::PhantomData;
 
 use nuklear_sys::*;
 
+//pub use nuklear_sys;
 pub use nuklear_sys::nk_font_atlas_format as NkFontAtlasFormat;
 pub use nuklear_sys::nk_flags as NkFlags; //TODO
 pub use nuklear_sys::nk_collapse_states as NkCollapseState;
@@ -42,6 +43,7 @@ pub use nuklear_sys::nk_font_coord_type as NkFontCoordType;
 pub use nuklear_sys::nk_style_header_align as NkStyleHeaderAlign;
 pub use nuklear_sys::nk_panel_type as NkPanelType;
 pub use nuklear_sys::nk_panel_row_layout_type as NkPanelRowLayoutType;
+pub use nuklear_sys::nk_command_type as NkCommandType;
 
 pub use nuklear_sys::nk_panel_flags as NkPanelFlags;
 pub use nuklear_sys::nk_text_alignment as NkTextAlignment;
@@ -5806,7 +5808,11 @@ impl NkCommand {
             p: PhantomData,
         }
     }
-}
+    
+    pub fn get_type(&self) -> NkCommandType {
+    	unsafe { (*self.internal).type_ }
+    }
+ }
 
 impl Debug for NkCommand {
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
@@ -6179,7 +6185,7 @@ impl NkFont {
 
     pub fn handle(&mut self) -> NkUserFont {
         let f: *mut nk_user_font = unsafe { &mut (&mut *self.internal).handle };
-        NkUserFont::new(f)
+        unsafe { NkUserFont::new(f) }
     }
 }
 
@@ -6192,7 +6198,7 @@ pub struct NkUserFont {
 }
 
 impl NkUserFont {
-    fn new(f: *mut nk_user_font) -> NkUserFont {
+    pub unsafe fn new(f: *mut nk_user_font) -> NkUserFont {
         NkUserFont {
             internal: f,
             p: PhantomData,
