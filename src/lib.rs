@@ -5795,6 +5795,30 @@ impl NkChart {
 
 // =============================================================================================
 
+macro_rules! emit_nk_command {
+	($rs_ty: ident, $nat_ty: ty) => {
+		pub struct $rs_ty {
+		    internal: *const $nat_ty,
+		    p: PhantomData<$nat_ty>,	
+		}
+		
+		impl From<NkCommand> for $rs_ty {
+			fn from(cmd: NkCommand) -> Self {
+				$rs_ty {
+					internal: cmd.internal as *const _ as *const $nat_ty,
+					p: PhantomData,
+				}
+			}
+		}
+		
+		impl $rs_ty {
+		    pub fn header(&self) -> NkCommand {
+			    unsafe { NkCommand::new(&(*self.internal).header) }
+		    }
+		}		
+	}
+}
+
 #[derive(Clone, Copy, PartialEq)]
 pub struct NkCommand {
     internal: *const nk_command,
@@ -5812,11 +5836,343 @@ impl NkCommand {
     pub fn get_type(&self) -> NkCommandType {
     	unsafe { (*self.internal).type_ }
     }
- }
+}
 
 impl Debug for NkCommand {
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
         unsafe { (*self.internal).fmt(f) }
+    }
+}
+
+emit_nk_command!(NkCommandScissor, nk_command_scissor);
+impl NkCommandScissor {
+    pub fn x(&self) -> i16 {
+    	unsafe { (*self.internal).x }
+    }
+    pub fn y(&self) -> i16 {
+    	unsafe { (*self.internal).y }
+    }
+    pub fn w(&self) -> u16 {
+    	unsafe { (*self.internal).w }
+    }
+    pub fn h(&self) -> u16 {
+    	unsafe { (*self.internal).h }
+    }
+}
+
+emit_nk_command!(NkCommandLine, nk_command_line);
+impl NkCommandLine {
+    pub fn line_thickness(&self) -> u16 {
+    	unsafe { (*self.internal).line_thickness }
+    }
+    pub fn begin(&self) -> NkVec2i {
+    	unsafe { (*self.internal).begin }
+    }
+    pub fn end(&self) -> NkVec2i {
+    	unsafe { (*self.internal).end }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+}
+
+emit_nk_command!(NkCommandCurve, nk_command_curve);
+impl NkCommandCurve {
+    pub fn line_thickness(&self) -> u16 {
+    	unsafe { (*self.internal).line_thickness }
+    }
+    pub fn begin(&self) -> NkVec2i {
+    	unsafe { (*self.internal).begin }
+    }
+    pub fn end(&self) -> NkVec2i {
+    	unsafe { (*self.internal).end }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+    pub fn ctrl(&self) -> &[NkVec2i] {
+    	unsafe { &(*self.internal).ctrl }
+    }
+}
+
+emit_nk_command!(NkCommandRect, nk_command_rect);
+impl NkCommandRect {
+    pub fn line_thickness(&self) -> u16 {
+    	unsafe { (*self.internal).line_thickness }
+    }
+    pub fn rounding(&self) -> u16 {
+    	unsafe { (*self.internal).rounding }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+    pub fn x(&self) -> i16 {
+    	unsafe { (*self.internal).x }
+    }
+    pub fn y(&self) -> i16 {
+    	unsafe { (*self.internal).y }
+    }
+    pub fn w(&self) -> u16 {
+    	unsafe { (*self.internal).w }
+    }
+    pub fn h(&self) -> u16 {
+    	unsafe { (*self.internal).h }
+    }
+}
+
+emit_nk_command!(NkCommandRectFilled, nk_command_rect_filled);
+impl NkCommandRectFilled {
+    pub fn rounding(&self) -> u16 {
+    	unsafe { (*self.internal).rounding }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+    pub fn x(&self) -> i16 {
+    	unsafe { (*self.internal).x }
+    }
+    pub fn y(&self) -> i16 {
+    	unsafe { (*self.internal).y }
+    }
+    pub fn w(&self) -> u16 {
+    	unsafe { (*self.internal).w }
+    }
+    pub fn h(&self) -> u16 {
+    	unsafe { (*self.internal).h }
+    }
+}
+
+emit_nk_command!(NkCommandRectMultiColor, nk_command_rect_multi_color);
+impl NkCommandRectMultiColor {
+    pub fn left(&self) -> NkColor {
+    	unsafe { (*self.internal).left }
+    }
+    pub fn top(&self) -> NkColor {
+    	unsafe { (*self.internal).top }
+    }
+    pub fn right(&self) -> NkColor {
+    	unsafe { (*self.internal).right }
+    }
+    pub fn bottom(&self) -> NkColor {
+    	unsafe { (*self.internal).bottom }
+    }
+    pub fn x(&self) -> i16 {
+    	unsafe { (*self.internal).x }
+    }
+    pub fn y(&self) -> i16 {
+    	unsafe { (*self.internal).y }
+    }
+    pub fn w(&self) -> u16 {
+    	unsafe { (*self.internal).w }
+    }
+    pub fn h(&self) -> u16 {
+    	unsafe { (*self.internal).h }
+    }
+}
+
+emit_nk_command!(NkCommandTriangle, nk_command_triangle);
+impl NkCommandTriangle {
+    pub fn line_thickness(&self) -> u16 {
+    	unsafe { (*self.internal).line_thickness }
+    }
+    pub fn a(&self) -> NkVec2i {
+    	unsafe { (*self.internal).a }
+    }
+    pub fn b(&self) -> NkVec2i {
+    	unsafe { (*self.internal).b }
+    }
+    pub fn c(&self) -> NkVec2i {
+    	unsafe { (*self.internal).c }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+}
+
+emit_nk_command!(NkCommandTriangleFilled, nk_command_triangle_filled);
+impl NkCommandTriangleFilled {
+    pub fn a(&self) -> NkVec2i {
+    	unsafe { (*self.internal).a }
+    }
+    pub fn b(&self) -> NkVec2i {
+    	unsafe { (*self.internal).b }
+    }
+    pub fn c(&self) -> NkVec2i {
+    	unsafe { (*self.internal).c }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+}
+
+emit_nk_command!(NkCommandCircle, nk_command_circle);
+impl NkCommandCircle {
+    pub fn line_thickness(&self) -> u16 {
+    	unsafe { (*self.internal).line_thickness }
+    }
+    pub fn x(&self) -> i16 {
+    	unsafe { (*self.internal).x }
+    }
+    pub fn y(&self) -> i16 {
+    	unsafe { (*self.internal).y }
+    }
+    pub fn w(&self) -> u16 {
+    	unsafe { (*self.internal).w }
+    }
+    pub fn h(&self) -> u16 {
+    	unsafe { (*self.internal).h }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+}
+
+emit_nk_command!(NkCommandCircleFilled, nk_command_circle_filled);
+impl NkCommandCircleFilled {
+    pub fn x(&self) -> i16 {
+    	unsafe { (*self.internal).x }
+    }
+    pub fn y(&self) -> i16 {
+    	unsafe { (*self.internal).y }
+    }
+    pub fn w(&self) -> u16 {
+    	unsafe { (*self.internal).w }
+    }
+    pub fn h(&self) -> u16 {
+    	unsafe { (*self.internal).h }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+}
+
+emit_nk_command!(NkCommandArc, nk_command_arc);
+impl NkCommandArc {
+    pub fn cx(&self) -> i16 {
+    	unsafe { (*self.internal).cx }
+    }
+    pub fn cy(&self) -> i16 {
+    	unsafe { (*self.internal).cy }
+    }
+    pub fn r(&self) -> u16 {
+    	unsafe { (*self.internal).r }
+    }
+    pub fn line_thickness(&self) -> u16 {
+    	unsafe { (*self.internal).line_thickness }
+    }
+    pub fn a(&self) -> &[f32] {
+    	unsafe { &(*self.internal).a }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+}
+
+emit_nk_command!(NkCommandArcFilled, nk_command_arc_filled);
+impl NkCommandArcFilled {
+    pub fn cx(&self) -> i16 {
+    	unsafe { (*self.internal).cx }
+    }
+    pub fn cy(&self) -> i16 {
+    	unsafe { (*self.internal).cy }
+    }
+    pub fn r(&self) -> u16 {
+    	unsafe { (*self.internal).r }
+    }
+    pub fn a(&self) -> &[f32] {
+    	unsafe { &(*self.internal).a }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+}
+
+emit_nk_command!(NkCommandPolygon, nk_command_polygon);
+impl NkCommandPolygon {
+    pub fn line_thickness(&self) -> u16 {
+    	unsafe { (*self.internal).line_thickness }
+    }
+    pub fn points(&self) -> &[NkVec2i] {
+    	unsafe { ::std::slice::from_raw_parts((*self.internal).points.as_ptr(), (*self.internal).point_count as usize) }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+}
+
+emit_nk_command!(NkCommandPolygonFilled, nk_command_polygon_filled);
+impl NkCommandPolygonFilled {
+    pub fn points(&self) -> &[NkVec2i] {
+    	unsafe { ::std::slice::from_raw_parts((*self.internal).points.as_ptr(), (*self.internal).point_count as usize) }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+}
+
+emit_nk_command!(NkCommandPolyline, nk_command_polyline);
+impl NkCommandPolyline {
+    pub fn line_thickness(&self) -> u16 {
+    	unsafe { (*self.internal).line_thickness }
+    }
+    pub fn points(&self) -> &[NkVec2i] {
+    	unsafe { ::std::slice::from_raw_parts((*self.internal).points.as_ptr(), (*self.internal).point_count as usize) }
+    }
+    pub fn color(&self) -> NkColor {
+    	unsafe { (*self.internal).color }
+    }
+}
+
+emit_nk_command!(NkCommandImage, nk_command_image);
+impl NkCommandImage {
+    pub fn x(&self) -> i16 {
+    	unsafe { (*self.internal).x }
+    }
+    pub fn y(&self) -> i16 {
+    	unsafe { (*self.internal).y }
+    }
+    pub fn w(&self) -> u16 {
+    	unsafe { (*self.internal).w }
+    }
+    pub fn h(&self) -> u16 {
+    	unsafe { (*self.internal).h }
+    }
+    pub fn col(&self) -> NkColor {
+    	unsafe { (*self.internal).col }
+    }
+    pub fn img(&self) -> NkImage {
+    	unsafe { NkImage {internal: (*self.internal).img } }
+    }
+}
+
+emit_nk_command!(NkCommandText, nk_command_text);
+impl NkCommandText {
+    pub fn x(&self) -> i16 {
+    	unsafe { (*self.internal).x }
+    }
+    pub fn y(&self) -> i16 {
+    	unsafe { (*self.internal).y }
+    }
+    pub fn w(&self) -> u16 {
+    	unsafe { (*self.internal).w }
+    }
+    pub fn h(&self) -> u16 {
+    	unsafe { (*self.internal).h }
+    }
+    pub fn height(&self) -> f32 {
+    	unsafe { (*self.internal).height }
+    }
+    pub fn chars(&self) -> &[u8] {
+    	unsafe { ::std::slice::from_raw_parts((*self.internal).string.as_ptr() as *const u8, (*self.internal).length as usize) }
+    }
+    pub fn background(&self) -> NkColor {
+    	unsafe { (*self.internal).background }
+    }
+    pub fn foreground(&self) -> NkColor {
+    	unsafe { (*self.internal).foreground }
+    }        
+    pub fn font(&self) -> NkUserFont {
+    	unsafe { NkUserFont::new((*self.internal).font as *mut nk_user_font) }
     }
 }
 
@@ -6204,6 +6560,14 @@ impl NkUserFont {
             p: PhantomData,
         }
     }
+    
+    pub unsafe fn userdata_ptr(&self) -> NkHandle {
+    	NkHandle::from_ptr(*(*self.internal).userdata.ptr.as_ref())
+    }
+    
+    pub unsafe fn userdata_id(&self) -> NkHandle {
+    	NkHandle::from_id(*(*self.internal).userdata.id.as_ref())
+    }    
 }
 
 // =============================================================================================
