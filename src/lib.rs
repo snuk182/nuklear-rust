@@ -73,6 +73,79 @@ pub const NK_FILTER_BINARY: NkPluginFilter = Some(nk_filter_binary);
 
 pub const ALIGNMENT: usize = 16;
 
+macro_rules! wrapper_type {
+	($name: ident, $typ: ty) => {
+		#[derive(Debug, Clone)]
+		pub struct $name {
+			internal: $typ
+		}
+		
+		impl AsRef<$typ> for $name {
+		    fn as_ref(&self) -> &$typ {
+		        &self.internal
+		    }
+		}
+		impl AsMut<$typ> for $name {
+		    fn as_mut(&mut self) -> &mut $typ {
+		        &mut self.internal
+		    }
+		}
+		impl Default for $name {
+			fn default() -> Self {
+				$name {
+					internal: unsafe { ::std::mem::zeroed() },
+				}
+			}
+		}
+	}
+}
+
+macro_rules! pointer_mut_type {
+	($name: ident, $typ: ty) => {
+		#[derive(Debug, Clone)]
+		pub struct $name {
+			internal: *mut $typ,
+			p: ::std::marker::PhantomData<$typ>
+		}
+		
+		impl $name {
+			fn new(i: *mut $typ) -> $name {
+				$name {
+					internal: i,
+					p: PhantomData,
+				}
+			}
+			
+			pub unsafe fn raw(&mut self) -> *mut $typ {
+				self.internal
+			}
+		}
+	}
+}
+
+macro_rules! pointer_const_type {
+	($name: ident, $typ: ty) => {
+		#[derive(Debug, Clone)]
+		pub struct $name {
+			internal: *const $typ,
+			p: ::std::marker::PhantomData<$typ>
+		}
+		
+		impl $name {
+			#[allow(dead_code)]
+			fn new(i: *const $typ) -> $name {
+				$name {
+					internal: i,
+					p: PhantomData,
+				}
+			}
+			
+			pub unsafe fn raw(&self) -> *const $typ {
+				self.internal
+			}
+		}
+	}
+}
 // ==========================================================================================================
 
 unsafe extern "C" fn nk_filter_custom(arg1: *const nk_text_edit, unicode: nk_rune) -> ::std::os::raw::c_int {
@@ -324,20 +397,9 @@ impl NkHandle {
 
 // ==================================================================================
 
-#[derive(Debug, Clone, PartialEq, Copy)]
-pub struct NkInput {
-    internal: *const nk_input,
-    p: PhantomData<nk_input>,
-}
+pointer_const_type!(NkInput, nk_input);
 
 impl NkInput {
-    fn new(i: *const nk_input) -> NkInput {
-        NkInput {
-            internal: i,
-            p: PhantomData,
-        }
-    }
-
     pub fn mouse(&self) -> NkMouse {
         NkMouse { internal: unsafe { (*self.internal).mouse } }
     }
@@ -405,17 +467,7 @@ impl NkInput {
 
 // =====================================================================
 
-#[derive(Clone, PartialEq, Copy)]
-pub struct NkDrawCommand {
-    internal: *const nk_draw_command,
-    p: PhantomData<nk_draw_command>,
-}
-
-impl Debug for NkDrawCommand {
-    fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
-        unsafe { (*self.internal).fmt(f) }
-    }
-}
+pointer_const_type!(NkDrawCommand, nk_draw_command);
 
 impl NkDrawCommand {
     pub fn clip_rect(&self) -> &NkRect {
@@ -453,10 +505,7 @@ impl NkMouseButton {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct NkMouse {
-    internal: nk_mouse,
-}
+wrapper_type!(NkMouse, nk_mouse);
 
 impl NkMouse {
     pub fn pos(&self) -> &NkVec2 {
@@ -498,11 +547,7 @@ impl NkMouse {
 
 // =====================================================================
 
-#[derive(Debug, Clone, PartialEq, Copy)]
-pub struct NkStyle {
-    internal: *mut nk_style,
-    p: PhantomData<nk_style>,
-}
+pointer_mut_type!(NkStyle, nk_style);
 
 impl NkStyle {
     pub fn window(&mut self) -> NkStyleWindow {
@@ -596,19 +641,9 @@ impl NkStyle {
 
 // =====================================================================
 
-pub struct NkStyleCombo {
-    internal: *mut nk_style_combo,
-    p: PhantomData<nk_style_combo>,
-}
+pointer_mut_type!(NkStyleCombo, nk_style_combo);
 
 impl NkStyleCombo {
-    fn new(s: *mut nk_style_combo) -> NkStyleCombo {
-        NkStyleCombo {
-            internal: s,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn normal(&self) -> NkStyleItemRef {
@@ -774,19 +809,9 @@ impl NkStyleCombo {
 
 // =====================================================================
 
-pub struct NkStyleTab {
-    internal: *mut nk_style_tab,
-    p: PhantomData<nk_style_tab>,
-}
+pointer_mut_type!(NkStyleTab, nk_style_tab);
 
 impl NkStyleTab {
-    fn new(s: *mut nk_style_tab) -> NkStyleTab {
-        NkStyleTab {
-            internal: s,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn background(&self) -> NkStyleItemRef {
@@ -908,19 +933,9 @@ impl NkStyleTab {
 
 // =====================================================================
 
-pub struct NkStyleScrollbar {
-    internal: *mut nk_style_scrollbar,
-    p: PhantomData<nk_style_scrollbar>,
-}
+pointer_mut_type!(NkStyleScrollbar, nk_style_scrollbar);
 
 impl NkStyleScrollbar {
-    fn new(s: *mut nk_style_scrollbar) -> NkStyleScrollbar {
-        NkStyleScrollbar {
-            internal: s,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn normal(&self) -> NkStyleItemRef {
@@ -1084,19 +1099,9 @@ impl NkStyleScrollbar {
 
 // =====================================================================
 
-pub struct NkStyleChart {
-    internal: *mut nk_style_chart,
-    p: PhantomData<nk_style_chart>,
-}
+pointer_mut_type!(NkStyleChart, nk_style_chart);
 
 impl NkStyleChart {
-    fn new(s: *mut nk_style_chart) -> NkStyleChart {
-        NkStyleChart {
-            internal: s,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn background(&self) -> NkStyleItemRef {
@@ -1162,19 +1167,9 @@ impl NkStyleChart {
 
 // =====================================================================
 
-pub struct NkStyleEdit {
-    internal: *mut nk_style_edit,
-    p: PhantomData<nk_style_edit>,
-}
+pointer_mut_type!(NkStyleEdit, nk_style_edit);
 
 impl NkStyleEdit {
-    fn new(s: *mut nk_style_edit) -> NkStyleEdit {
-        NkStyleEdit {
-            internal: s,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn normal(&self) -> NkStyleItemRef {
@@ -1382,19 +1377,9 @@ impl NkStyleEdit {
 
 // =====================================================================
 
-pub struct NkStyleProperty {
-    internal: *mut nk_style_property,
-    p: PhantomData<nk_style_property>,
-}
+pointer_mut_type!(NkStyleProperty, nk_style_property);
 
 impl NkStyleProperty {
-    fn new(s: *mut nk_style_property) -> NkStyleProperty {
-        NkStyleProperty {
-            internal: s,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn normal(&self) -> NkStyleItemRef {
@@ -1524,19 +1509,9 @@ impl NkStyleProperty {
 
 // =====================================================================
 
-pub struct NkStyleProgress {
-    internal: *mut nk_style_progress,
-    p: PhantomData<nk_style_progress>,
-}
+pointer_mut_type!(NkStyleProgress, nk_style_progress);
 
 impl NkStyleProgress {
-    fn new(s: *mut nk_style_progress) -> NkStyleProgress {
-        NkStyleProgress {
-            internal: s,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn normal(&self) -> NkStyleItemRef {
@@ -1660,19 +1635,9 @@ impl NkStyleProgress {
 
 // =====================================================================
 
-pub struct NkStyleSlider {
-    internal: *mut nk_style_slider,
-    p: PhantomData<nk_style_slider>,
-}
+pointer_mut_type!(NkStyleSlider, nk_style_slider);
 
 impl NkStyleSlider {
-    fn new(s: *mut nk_style_slider) -> NkStyleSlider {
-        NkStyleSlider {
-            internal: s,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn normal(&self) -> NkStyleItemRef {
@@ -1868,19 +1833,9 @@ impl NkStyleSlider {
 
 // =====================================================================
 
-pub struct NkStyleSelectable {
-    internal: *mut nk_style_selectable,
-    p: PhantomData<nk_style_selectable>,
-}
+pointer_mut_type!(NkStyleSelectable, nk_style_selectable);
 
 impl NkStyleSelectable {
-    fn new(s: *mut nk_style_selectable) -> NkStyleSelectable {
-        NkStyleSelectable {
-            internal: s,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn normal(&self) -> NkStyleItemRef {
@@ -2044,19 +1999,9 @@ impl NkStyleSelectable {
 
 // =====================================================================
 
-pub struct NkStyleButton {
-    internal: *mut nk_style_button,
-    p: PhantomData<nk_style_button>,
-}
+pointer_mut_type!(NkStyleButton, nk_style_button);
 
 impl NkStyleButton {
-    fn new(s: *mut nk_style_button) -> NkStyleButton {
-        NkStyleButton {
-            internal: s,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn normal(&self) -> NkStyleItemRef {
@@ -2182,19 +2127,9 @@ impl NkStyleButton {
 
 // =====================================================================
 
-pub struct NkStyleToggle {
-    internal: *mut nk_style_toggle,
-    p: PhantomData<nk_style_toggle>,
-}
+pointer_mut_type!(NkStyleToggle, nk_style_toggle);
 
 impl NkStyleToggle {
-    fn new(s: *mut nk_style_toggle) -> NkStyleToggle {
-        NkStyleToggle {
-            internal: s,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn normal(&self) -> NkStyleItemRef {
@@ -2332,19 +2267,9 @@ impl NkStyleToggle {
 
 // =====================================================================
 
-pub struct NkStyleWindowHeader {
-    internal: *mut nk_style_window_header,
-    p: PhantomData<nk_style_window_header>,
-}
+pointer_mut_type!(NkStyleWindowHeader, nk_style_window_header);
 
 impl NkStyleWindowHeader {
-    fn new(h: *mut nk_style_window_header) -> NkStyleWindowHeader {
-        NkStyleWindowHeader {
-            internal: h,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn normal(&self) -> NkStyleItemRef {
@@ -2470,20 +2395,9 @@ impl NkStyleWindowHeader {
 
 // =====================================================================
 
-#[derive(Debug, Clone, PartialEq, Copy)]
-pub struct NkStyleWindow {
-    internal: *mut nk_style_window,
-    p: PhantomData<nk_style_window>,
-}
+pointer_mut_type!(NkStyleWindow, nk_style_window);
 
 impl NkStyleWindow {
-    fn new(w: *mut nk_style_window) -> NkStyleWindow {
-        NkStyleWindow {
-            internal: w,
-            p: PhantomData,
-        }
-    }
-
     // ===== getters =====
 
     pub fn header(&self) -> NkStyleWindowHeader {
@@ -2759,21 +2673,10 @@ impl NkStyleWindow {
 
 // =====================================================================
 
-#[derive(Debug, Clone, PartialEq, Copy)]
-pub struct NkDrawList {
-    internal: *mut nk_draw_list,
-    p: PhantomData<nk_draw_list>,
-}
+pointer_mut_type!(NkDrawList, nk_draw_list);
 
 impl NkDrawList {
-    fn new(i: *mut nk_draw_list) -> NkDrawList {
-        NkDrawList {
-            internal: i,
-            p: PhantomData,
-        }
-    }
-
-    pub fn init(&mut self) {
+	pub fn init(&mut self) {
         unsafe {
             nk_draw_list_init(self.internal);
         }
@@ -3007,27 +2910,11 @@ impl NkCursorMap {
 
 // ==================================================================================
 
-#[derive(Debug, Clone, Copy)]
-pub struct NkCursor {
-    internal: *const nk_cursor,
-    p: PhantomData<nk_cursor>,
-}
-
-impl NkCursor {
-    fn new(c: *const nk_cursor) -> NkCursor {
-        NkCursor {
-            internal: c,
-            p: PhantomData,
-        }
-    }
-}
+pointer_const_type!(NkCursor, nk_cursor);
 
 // ==================================================================================
 
-#[derive(Clone, Debug)]
-pub struct NkAllocator {
-    internal: nk_allocator,
-}
+wrapper_type!(NkAllocator, nk_allocator);
 
 impl NkAllocator {
     #[cfg(feature="rust_allocator")]
@@ -3056,24 +2943,9 @@ impl NkAllocator {
     }
 }
 
-impl Default for NkAllocator {
-    fn default() -> Self {
-        NkAllocator { internal: nk_allocator::default() }
-    }
-}
-
 // ============================================================================================
 
-#[derive(Debug, Clone, Copy)]
-pub struct NkConvertConfig {
-    internal: nk_convert_config,
-}
-
-impl Default for NkConvertConfig {
-    fn default() -> Self {
-        NkConvertConfig { internal: nk_convert_config { ..Default::default() } }
-    }
-}
+wrapper_type!(NkConvertConfig, nk_convert_config);
 
 impl NkConvertConfig {
     pub fn set_global_alpha(&mut self, val: f32) {
@@ -3133,27 +3005,11 @@ impl NkDrawVertexLayoutElements {
 
 // =============================================================================================
 
-#[derive(Debug, Clone, Copy)]
-pub struct NkStyleItemRef {
-    internal: *mut nk_style_item,
-    p: PhantomData<nk_style_item>,
-}
-
-impl NkStyleItemRef {
-    fn new(i: *mut nk_style_item) -> NkStyleItemRef {
-        NkStyleItemRef {
-            internal: i,
-            p: PhantomData,
-        }
-    }
-}
+pointer_const_type!(NkStyleItemRef, nk_style_item);
 
 // =============================================================================================
 
-#[derive(Debug, Clone, Copy)]
-pub struct NkStyleItem {
-    internal: nk_style_item,
-}
+wrapper_type!(NkStyleItem, nk_style_item);
 
 impl NkStyleItem {
     pub fn image(img: NkImage) -> NkStyleItem {
@@ -3177,20 +3033,9 @@ impl ::std::convert::From<NkStyleItemRef> for NkStyleItem {
 
 // =============================================================================================
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NkTextEdit {
-    internal: *mut nk_text_edit,
-    p: PhantomData<nk_text_edit>,
-}
+pointer_mut_type!(NkTextEdit, nk_text_edit);
 
 impl NkTextEdit {
-    fn new(t: *mut nk_text_edit) -> NkTextEdit {
-        NkTextEdit {
-            internal: t,
-            p: PhantomData,
-        }
-    }
-
     pub fn init(&mut self, arg2: &mut NkAllocator, size: usize) {
         unsafe {
             nk_textedit_init(self.internal, &mut arg2.internal as *mut nk_allocator, size);
@@ -3263,13 +3108,10 @@ impl NkTextEdit {
 
 // =============================================================================================
 
-#[derive(Clone, Debug, Copy)]
-pub struct NkFontConfig {
-    internal: nk_font_config,
-}
+wrapper_type!(NkFontConfig, nk_font_config);
 
 impl NkFontConfig {
-    pub fn new(pixel_height: f32) -> NkFontConfig {
+    pub fn with_height(pixel_height: f32) -> NkFontConfig {
         unsafe { NkFontConfig { internal: nk_font_config(pixel_height) } }
     }
 
@@ -3437,7 +3279,7 @@ impl NkFontAtlas {
     }
 
     pub fn add_font_with_bytes(&mut self, font_bytes: &[u8], font_size: f32) -> Result<NkFont, NkError> {
-        let mut cfg = NkFontConfig::new(font_size);
+        let mut cfg = NkFontConfig::with_height(font_size);
 
         cfg.internal.ttf_size = font_bytes.len();
         cfg.internal.ttf_blob = font_bytes as *const _ as *mut c_void;
@@ -3541,31 +3383,13 @@ enum NkFontAtlasState {
 
 // =============================================================================================
 
-#[derive(Debug, Clone, Copy)]
-pub struct NkDrawNullTexture {
-    internal: nk_draw_null_texture,
-}
-
-impl Default for NkDrawNullTexture {
-    fn default() -> Self {
-        NkDrawNullTexture { internal: nk_draw_null_texture::default() }
-    }
-}
+wrapper_type!(NkDrawNullTexture, nk_draw_null_texture);
 
 // =============================================================================================
 
 const DEFAULT_BUFFER_SIZE: usize = 8096;
 
-#[derive(Debug, Clone, Copy)]
-pub struct NkBuffer {
-    internal: nk_buffer,
-}
-
-impl Default for NkBuffer {
-    fn default() -> Self {
-        NkBuffer { internal: nk_buffer::default() }
-    }
-}
+wrapper_type!(NkBuffer, nk_buffer);
 
 impl NkBuffer {
     pub fn new(alloc: &mut NkAllocator) -> NkBuffer {
@@ -3658,10 +3482,7 @@ impl NkContext {
     }
 
     pub fn style(&mut self) -> NkStyle {
-        NkStyle {
-            internal: &mut self.internal.style,
-            p: PhantomData,
-        }
+        NkStyle::new(&mut self.internal.style)
     }
 
     pub fn draw_list(&mut self) -> NkDrawList {
@@ -5354,21 +5175,9 @@ impl<'a> Iterator for NkDrawCommandIntoIter<'a> {
 
 // =============================================================================================
 
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NkWindow {
-    internal: *mut nk_window,
-    p: PhantomData<nk_window>,
-}
+pointer_mut_type!(NkWindow, nk_window);
 
 impl NkWindow {
-    fn new(w: *mut nk_window) -> NkWindow {
-        NkWindow {
-            internal: w,
-            p: PhantomData,
-        }
-    }
-
     // pub seq: ::std::os::raw::c_uint,
     // pub name: nk_hash,
     // pub name_string: [::std::os::raw::c_char; 64usize],
@@ -5477,19 +5286,9 @@ impl NkWindow {
 
 // =============================================================================================
 
-pub struct NkRowLayout {
-    internal: *mut nk_row_layout,
-    p: PhantomData<nk_row_layout>,
-}
+pointer_mut_type!(NkRowLayout, nk_row_layout);
 
 impl NkRowLayout {
-    fn new(i: *mut nk_row_layout) -> NkRowLayout {
-        NkRowLayout {
-            internal: i,
-            p: Default::default(),
-        }
-    }
-
     pub fn layout_type(&self) -> &NkPanelRowLayoutType {
         unsafe { &(*self.internal).type_ }
     }
@@ -5574,20 +5373,9 @@ impl NkRowLayout {
 
 // =============================================================================================
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NkPanel {
-    internal: *mut nk_panel,
-    p: PhantomData<nk_panel>,
-}
+pointer_mut_type!(NkPanel, nk_panel);
 
 impl NkPanel {
-    fn new(p: *mut nk_panel) -> NkPanel {
-        NkPanel {
-            internal: p,
-            p: PhantomData,
-        }
-    }
-
     pub fn bounds(&self) -> &NkRect {
         unsafe { &(*self.internal).bounds }
     }
@@ -5743,19 +5531,9 @@ impl NkPanel {
 
 // =============================================================================================
 
-pub struct NkChart {
-    internal: *mut nk_chart,
-    p: PhantomData<nk_chart>,
-}
+pointer_mut_type!(NkChart, nk_chart);
 
 impl NkChart {
-    fn new(i: *mut nk_chart) -> NkChart {
-        NkChart {
-            internal: i,
-            p: PhantomData,
-        }
-    }
-
     pub fn x(&self) -> f32 {
         unsafe { (*self.internal).x }
     }
@@ -6178,20 +5956,9 @@ impl NkCommandText {
 
 // =============================================================================================
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NkCommandBuffer {
-    internal: *mut nk_command_buffer,
-    p: PhantomData<nk_command_buffer>,
-}
+pointer_mut_type!(NkCommandBuffer, nk_command_buffer);
 
 impl NkCommandBuffer {
-    fn new(b: *mut nk_command_buffer) -> NkCommandBuffer {
-        NkCommandBuffer {
-            internal: b,
-            p: PhantomData,
-        }
-    }
-
     pub fn stroke_line(&mut self, x0: f32, y0: f32, x1: f32, y1: f32, line_thickness: f32, color: NkColor) {
         unsafe {
             nk_stroke_line(self.internal, x0, y0, x1, y1, line_thickness, color);
@@ -6434,10 +6201,7 @@ pub fn style_get_color_by_name(c: NkStyleColor) -> Cow<'static, str> {
 
 // =============================================================================================
 
-#[derive(Debug, Clone, Copy)]
-pub struct NkImage {
-    internal: nk_image,
-}
+wrapper_type!(NkImage, nk_image);
 
 impl NkImage {
     pub fn with_id(id: i32) -> NkImage {
@@ -6459,11 +6223,7 @@ impl NkImage {
 
 // =============================================================================================
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NkFontGlyph {
-    internal: *const nk_font_glyph,
-    p: PhantomData<nk_font_glyph>,
-}
+pointer_const_type!(NkFontGlyph, nk_font_glyph);
 
 // impl Default for NkFontGlyph {
 // fn default() -> Self {
@@ -6474,13 +6234,6 @@ pub struct NkFontGlyph {
 // }
 
 impl NkFontGlyph {
-    fn new(g: *const nk_font_glyph) -> NkFontGlyph {
-        NkFontGlyph {
-            internal: g,
-            p: PhantomData,
-        }
-    }
-
     pub fn get_codepoint(&self) -> char {
         unsafe { ::std::char::from_u32((&*self.internal).codepoint).unwrap() }
     }
@@ -6521,20 +6274,9 @@ impl NkFontGlyph {
 
 // =============================================================================================
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NkFont {
-    internal: *mut nk_font,
-    p: PhantomData<nk_font>,
-}
+pointer_mut_type!(NkFont, nk_font);
 
 impl NkFont {
-    fn new(font: *mut nk_font) -> NkFont {
-        NkFont {
-            internal: font,
-            p: PhantomData,
-        }
-    }
-
     pub fn find_glyph(&mut self, unicode: char) -> NkFontGlyph {
         NkFontGlyph::new(unsafe { nk_font_find_glyph(self.internal, unicode as u32) })
     }
