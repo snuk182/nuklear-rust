@@ -72,14 +72,8 @@ pub const NK_FILTER_BINARY: NkPluginFilter = Some(nk_filter_binary);
 
 pub const ALIGNMENT: usize = 16;
 
-macro_rules! wrapper_type {
+macro_rules! wrapper_impls {
 	($name: ident, $typ: ty) => {
-		//#[derive(Debug, Clone)]
-		#[repr(C)]
-		pub struct $name {
-			internal: $typ
-		}
-		
 		impl AsRef<$typ> for $name {
 		    fn as_ref(&self) -> &$typ {
 		        &self.internal
@@ -107,56 +101,33 @@ macro_rules! wrapper_type {
 					internal: unsafe { ::std::mem::zeroed() },
 				}
 			}
-		}
+		}		
 	}
 }
 
-/*macro_rules! pointer_mut_type {
+macro_rules! wrapper_type {
 	($name: ident, $typ: ty) => {
-		#[derive(Debug, Clone)]
+		#[derive(Clone)]
+		#[repr(C)]
 		pub struct $name {
-			internal: *mut $typ,
-			p: ::std::marker::PhantomData<$typ>
+			internal: $typ
 		}
 		
-		impl $name {
-			fn new(i: *mut $typ) -> $name {
-				$name {
-					internal: i,
-					p: PhantomData,
-				}
-			}
-			
-			pub unsafe fn raw(&mut self) -> *mut $typ {
-				self.internal
-			}
-		}
+		wrapper_impls!($name, $typ);
 	}
 }
 
-macro_rules! pointer_const_type {
+macro_rules! wrapper_type_no_clone {
 	($name: ident, $typ: ty) => {
-		#[derive(Debug, Clone)]
+		#[repr(C)]
 		pub struct $name {
-			internal: *const $typ,
-			p: ::std::marker::PhantomData<$typ>
+			internal: $typ
 		}
 		
-		impl $name {
-			#[allow(dead_code)]
-			fn new(i: *const $typ) -> $name {
-				$name {
-					internal: i,
-					p: PhantomData,
-				}
-			}
-			
-			pub unsafe fn raw(&self) -> *const $typ {
-				self.internal
-			}
-		}
+		wrapper_impls!($name, $typ);
 	}
-}*/
+}
+
 // ==========================================================================================================
 
 unsafe extern "C" fn nk_filter_custom(arg1: *const nk_text_edit, unicode: nk_rune) -> ::std::os::raw::c_int {
@@ -2873,7 +2844,7 @@ impl NkStyleItem {
 
 // =============================================================================================
 
-wrapper_type!(NkTextEdit, nk_text_edit);
+wrapper_type_no_clone!(NkTextEdit, nk_text_edit);
 
 impl NkTextEdit {
     pub fn init(&mut self, arg2: &mut NkAllocator, size: usize) {
@@ -5018,7 +4989,7 @@ impl<'a> Iterator for NkDrawCommandIntoIter<'a> {
 
 // =============================================================================================
 
-wrapper_type!(NkWindow, nk_window);
+wrapper_type_no_clone!(NkWindow, nk_window);
 
 impl NkWindow {
     // pub seq: ::std::os::raw::c_uint,
