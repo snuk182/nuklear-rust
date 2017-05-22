@@ -143,7 +143,7 @@ unsafe extern "C" fn nk_filter_custom(arg1: *const nk_text_edit, unicode: nk_run
     }
 }
 
-static mut CUSTOM_EDIT_FILTER: Option<fn(&mut NkTextEdit, char) -> bool> = None;
+static mut CUSTOM_EDIT_FILTER: Option<fn(&NkTextEdit, char) -> bool> = None;
 
 // ===========================================================================================================
 
@@ -4093,7 +4093,7 @@ impl NkContext {
         }
     }
 
-    pub fn edit_string_custom_filter(&mut self, flags: NkFlags, buffer: &mut [u8], len: &mut i32, filter: fn(&mut NkTextEdit, char) -> bool) -> NkFlags {
+    pub fn edit_string_custom_filter(&mut self, flags: NkFlags, buffer: &mut [u8], len: &mut i32, filter: fn(&NkTextEdit, char) -> bool) -> NkFlags {
         unsafe {
             CUSTOM_EDIT_FILTER = Some(filter);
             nk_edit_string(&mut self.internal as *mut nk_context,
@@ -4992,27 +4992,6 @@ impl<'a> Iterator for NkDrawCommandIntoIter<'a> {
 wrapper_type_no_clone!(NkWindow, nk_window);
 
 impl NkWindow {
-    // pub seq: ::std::os::raw::c_uint,
-    // pub name: nk_hash,
-    // pub name_string: [::std::os::raw::c_char; 64usize],
-    // pub flags: nk_flags,
-    // pub bounds: nk_rect,
-    // pub scrollbar: nk_scroll,
-    // pub buffer: nk_command_buffer,
-    // pub layout: *mut nk_panel,
-    // pub scrollbar_hiding_timer: f32,
-    // pub property: nk_property_state,
-    // pub popup: nk_popup_state,
-    // pub edit: nk_edit_state,
-    // pub scrolled: ::std::os::raw::c_uint,
-    // pub tables: *mut nk_table,
-    // pub table_count: ::std::os::raw::c_ushort,
-    // pub table_size: ::std::os::raw::c_ushort,
-    // pub next: *mut nk_window,
-    // pub prev: *mut nk_window,
-    // pub parent: *mut nk_window,
-    //
-
     pub fn seq(&self) -> u32 {
         self.internal.seq
     }
@@ -5043,19 +5022,62 @@ impl NkWindow {
     pub fn scrollbar_hiding_timer(&self) -> f32 {
         self.internal.scrollbar_hiding_timer
     }
-
-    // pub buffer: nk_command_buffer,
-    // pub layout: *mut nk_panel,
-    // pub property: nk_property_state,
-    // pub popup: nk_popup_state,
-    // pub edit: nk_edit_state,
-    // pub scrolled: ::std::os::raw::c_uint,
-    // pub tables: *mut nk_table,
-    // pub table_count: ::std::os::raw::c_ushort,
-    // pub table_size: ::std::os::raw::c_ushort,
-    // pub next: *mut nk_window,
-    // pub prev: *mut nk_window,
-    // pub parent: *mut nk_window,
+    pub fn buffer(&self) -> &NkCommandBuffer {
+    	unsafe {
+    		::std::mem::transmute(&self.internal.buffer)
+    	}
+    }
+    pub fn layout(&self) -> &NkPanel {
+    	unsafe {
+    		::std::mem::transmute(self.internal.layout)
+    	}
+    }
+    pub fn layout_mut(&mut self) -> &mut NkPanel {
+    	unsafe {
+    		::std::mem::transmute(self.internal.layout)
+    	}
+    }
+    pub fn property(&self) -> &NkPropertyState {
+    	unsafe {
+    		::std::mem::transmute(&self.internal.property)
+    	}
+    }
+    pub fn popup(&self) -> &NkPopupState {
+    	unsafe {
+    		::std::mem::transmute(&self.internal.popup)
+    	}
+    }
+    pub fn edit(&self) -> &NkEditState {
+    	unsafe {
+    		::std::mem::transmute(&self.internal.edit)
+    	}
+    }
+    pub fn scrolled(&self) -> u32 {
+    	self.internal.scrolled
+    }
+    pub fn tables(&self) -> &[NkTable] {
+    	unsafe {
+    		::std::slice::from_raw_parts(self.internal.tables as *mut _ as *const NkTable, self.internal.table_count as usize)
+    	}
+    }
+    pub fn table_size(&self) -> u16 {
+    	self.internal.table_size
+    }
+    pub fn prev(&self) -> &NkWindow {
+    	unsafe {
+    		::std::mem::transmute(self.internal.prev)
+    	}
+    }
+    pub fn next(&self) -> &NkWindow {
+    	unsafe {
+    		::std::mem::transmute(self.internal.next)
+    	}
+    }
+    pub fn parent(&self) -> &NkWindow {
+    	unsafe {
+    		::std::mem::transmute(self.internal.parent)
+    	}
+    }
 
     pub fn set_flags(&mut self, flags: NkFlags) {
         self.internal.flags = flags;
@@ -5071,24 +5093,10 @@ impl NkWindow {
     }
 }
 
-// =============================================================================================
-
-// #[derive(Debug, Clone, Copy)]  //TODO mb remove
-// pub struct NkPanel {
-// internal: nk_panel,
-// }
-//
-// impl Default for NkPanel {
-// fn default() -> Self {
-// NkPanel { internal: nk_panel::default() }
-// }
-// }
-//
-// impl NkPanel {
-// pub fn bounds(&self) -> &NkRect {
-// self.internal.bounds
-// }
-// }
+wrapper_type_no_clone!(NkPropertyState, nk_property_state);
+wrapper_type!(NkPopupState, nk_popup_state);
+wrapper_type!(NkEditState, nk_edit_state);
+wrapper_type_no_clone!(NkTable, nk_table);
 
 // =============================================================================================
 
