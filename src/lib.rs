@@ -2733,6 +2733,20 @@ impl<'a> NkCursorMap<'a> {
 
 wrapper_type!(NkCursor, nk_cursor);
 
+impl NkCursor {
+	pub fn img(&self) -> &NkImage {
+		unsafe {
+			::std::mem::transmute(&self.internal.img)
+		}
+	}
+    pub fn size(&self) -> &NkVec2 {
+		&self.internal.size
+	}
+    pub fn offset(&self) -> &NkVec2 {
+		&self.internal.offset
+	}
+}
+
 // ==================================================================================
 
 wrapper_type!(NkAllocator, nk_allocator);
@@ -2924,7 +2938,7 @@ impl NkTextEdit {
 wrapper_type!(NkFontConfig, nk_font_config);
 
 impl NkFontConfig {
-    pub fn with_height(pixel_height: f32) -> NkFontConfig {
+    pub fn with_size(pixel_height: f32) -> NkFontConfig {
         unsafe { NkFontConfig { internal: nk_font_config(pixel_height) } }
     }
 
@@ -3042,24 +3056,8 @@ impl NkFontConfig {
 
 // =============================================================================================
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum NkError {
-    FontAtlasAlreadyFinalized,
-}
-
-pub struct NkFontAtlas {
-    internal: nk_font_atlas,
-    state: NkFontAtlasState,
-}
-
-impl Default for NkFontAtlas {
-    fn default() -> Self {
-        NkFontAtlas {
-            internal: nk_font_atlas::default(),
-            state: NkFontAtlasState::New,
-        }
-    }
-}
+wrapper_type!(NkFontAtlas, nk_font_atlas);
+pub type NkFontID = usize;
 
 impl NkFontAtlas {
     pub fn new(alloc: &mut NkAllocator) -> NkFontAtlas {
@@ -3070,24 +3068,24 @@ impl NkFontAtlas {
         a
     }
 
-    pub fn add_font_with_config(&mut self, cfg: &NkFontConfig) -> Result<&NkFont, NkError> {
-        match self.state {
-            NkFontAtlasState::New => unsafe {
-                nk_font_atlas_begin(&mut self.internal as *mut nk_font_atlas);
-                self.state = NkFontAtlasState::Started;
-            },
-            NkFontAtlasState::Finalized => return Err(NkError::FontAtlasAlreadyFinalized),
-            _ => {}
-        }
-
+    pub fn add_font_with_config(&mut self, cfg: &NkFontConfig) -> Option<Box<NkFont>> {
         unsafe {
-            Ok(::std::mem::transmute(nk_font_atlas_add(&mut self.internal as *mut nk_font_atlas,
-                                                       &cfg.internal as *const nk_font_config)))
+            if self.internal.font_num < 1 {
+	            nk_font_atlas_begin(&mut self.internal as *mut nk_font_atlas);
+	        }
+	
+	        let ret = nk_font_atlas_add(&mut self.internal as *mut nk_font_atlas, &cfg.internal as *const nk_font_config);
+	        
+	        if !ret.is_null() && self.internal.font_num > 0 { 
+	        	Some(Box::from_raw(ret as *mut _ as *mut NkFont)) 
+	        } else { 
+	        	None 
+	        }
         }
     }
 
-    pub fn add_font_with_bytes(&mut self, font_bytes: &[u8], font_size: f32) -> Result<&NkFont, NkError> {
-        let mut cfg = NkFontConfig::with_height(font_size);
+    pub fn add_font_with_bytes(&mut self, font_bytes: &[u8], font_size: f32) -> Option<Box<NkFont>> {
+        let mut cfg = NkFontConfig::with_size(font_size);
 
         cfg.internal.ttf_size = font_bytes.len();
         cfg.internal.ttf_blob = font_bytes as *const _ as *mut c_void;
@@ -3117,8 +3115,6 @@ impl NkFontAtlas {
                         NkFontAtlasFormat::NK_FONT_ATLAS_RGBA32 => 4,
                     } * width * height) as usize;
 
-        // 		self.state = NkFontAtlasState::Finalized;
-
         (unsafe { ::std::slice::from_raw_parts(image as *const u8, size) }, width as u32, height as u32)
     }
 
@@ -3132,7 +3128,6 @@ impl NkFontAtlas {
                               hnd.internal,
                               nullt);
         }
-        self.state = NkFontAtlasState::Finalized;
     }
 
     pub fn clear(&mut self) {
@@ -3162,31 +3157,51 @@ impl NkFontAtlas {
             nk_font_atlas_begin(&mut self.internal as *mut nk_font_atlas);
         }
     }
+    
+    pub fn pixels(&self) -> &[u8] {
+    	unsafe {
+    		::std::slice::from_raw_parts(self.internal.pixel as *const _ as *const u8, (self.internal.tex_width * self.internal.tex_height * 4) as usize)
+    	}
+    }
+    
+    pub fn tex_width(&self) -> u16 {
+    	self.internal.tex_width as u16
+    }
+    
+    pub fn tex_height(&self) -> u16 {
+    	self.internal.tex_height as u16
+    }
+    
+    pub fn custom(&self) -> NkRecti {
+    	self.internal.custom
+    }
+    
+    pub fn cursors(&self) -> &[NkCursor] {
+    	unsafe {
+    		::std::slice::from_raw_parts(self.internal.cursors.as_ptr() as *const NkCursor, self.internal.cursors.len())
+    	}
+    }
+    
+    pub fn glyphs(&self) -> &[NkFontGlyph] {
+    	unsafe {
+    		::std::slice::from_raw_parts(self.internal.glyphs as *const _ as *const NkFontGlyph, self.internal.glyph_count as usize)
+    	}
+    }
+    
+    pub fn fonts(&self) -> &[NkFont] {
+    	unsafe {
+    		::std::slice::from_raw_parts(self.internal.fonts as *const _ as *const NkFont, self.internal.font_num as usize)
+    	}
+    }
+    pub fn configs(&self) -> &[NkFontConfig] {
+    	unsafe {
+    		::std::slice::from_raw_parts(self.internal.config as *const _ as *const NkFontConfig, self.internal.font_num as usize)
+    	}
+    }
 
-    // pub fn nk_font_atlas_add_from_memory(atlas: *mut nk_font_atlas,
-    // memory: *mut ::std::os::raw::c_void,
-    // size: nk_size, height: f32,
-    // config: *const nk_font_config)
-    // -> *mut nk_font;
-    // pub fn nk_font_atlas_add_compressed(arg1: *mut nk_font_atlas,
-    // memory: *mut ::std::os::raw::c_void,
-    // size: nk_size, height: f32,
-    // arg2: *const nk_font_config)
-    // -> *mut nk_font;
-    // pub fn nk_font_atlas_add_compressed_base85(arg1: *mut nk_font_atlas,
-    // data:
-    // const ::std::os::raw::c_char,
-    // height: f32,
-    // config: *const nk_font_config)
-    // -> *mut nk_font;
-    //
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum NkFontAtlasState {
-    New,
-    Started,
-    Finalized,
+    /*pub permanent: nk_allocator,
+    pub temporary: nk_allocator,
+    pub default_font: *mut nk_font,*/
 }
 
 // =============================================================================================
@@ -6096,12 +6111,12 @@ impl NkFontGlyph {
 wrapper_type!(NkFont, nk_font);
 
 impl NkFont {
-    pub fn find_glyph(&mut self, unicode: char) -> &NkFontGlyph {
-        unsafe { ::std::mem::transmute(nk_font_find_glyph(&mut self.internal, unicode as u32)) }
+    pub fn find_glyph(&self, unicode: char) -> &NkFontGlyph {
+        unsafe { ::std::mem::transmute(nk_font_find_glyph(&self.internal as *const _ as *mut nk_font, unicode as u32)) }
     }
 
-    pub fn handle(&mut self) -> &mut NkUserFont {
-        unsafe { ::std::mem::transmute(&mut self.internal.handle) }
+    pub fn handle(&self) -> &NkUserFont {
+        unsafe { ::std::mem::transmute(&self.internal.handle as *const _ as *mut nk_user_font) }
     }
 }
 
