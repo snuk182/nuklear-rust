@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "rust_allocator", feature(alloc, heap_api))]
+#![cfg_attr(feature = "rust_allocator", feature(allocator_api, alloc, heap_api))]
 
 #[macro_use]
 extern crate log;

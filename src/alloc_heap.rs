@@ -5,7 +5,7 @@ extern crate alloc;
 use nuklear_sys::{nk_size, nk_handle};
 use super::ALIGNMENT;
 
-use self::alloc::heap;
+use self::alloc::heap::{Heap, Alloc, Layout};
 use std::os::raw::c_void;
 use std::mem;
 
@@ -15,7 +15,8 @@ pub unsafe extern "C" fn alloc(_: nk_handle, _: *mut c_void, size: nk_size) -> *
     let size_size = mem::size_of::<nk_size>();
     let size = size + size_size;
 
-    let memory = heap::allocate(size, ALIGNMENT);
+    let memory = Heap.alloc(Layout::from_size_align(size, ALIGNMENT).unwrap())
+        .unwrap_or_else(|err| Heap.oom(err));
     trace!("allocating {} / {} bytes", size_size, size);
 
     *(memory as *mut nk_size) = size;
@@ -36,5 +37,6 @@ pub unsafe extern "C" fn free(_: nk_handle, old: *mut c_void) {
 
     trace!("deallocating {} bytes from {:p}", old_size, old);
 
-    heap::deallocate(old as *mut u8, old_size, ALIGNMENT);
+    Heap.dealloc(old as *mut u8,
+                 Layout::from_size_align(old_size, ALIGNMENT).unwrap());
 }
