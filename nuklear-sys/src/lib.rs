@@ -7558,7 +7558,7 @@ pub enum nk_style_item_type {
 pub struct nk_style_item_data {
     pub image: __BindgenUnionField<nk_image>,
     pub color: __BindgenUnionField<nk_color>,
-    pub bindgen_union_field: [usize; 3usize],
+    pub bindgen_union_field: [u64; 3usize],
 }
 #[test]
 fn bindgen_test_layout_nk_style_item_data() {
@@ -9080,7 +9080,7 @@ pub struct nk_page_data {
     pub tbl: __BindgenUnionField<nk_table>,
     pub pan: __BindgenUnionField<nk_panel>,
     pub win: __BindgenUnionField<nk_window>,
-    pub bindgen_union_field: [usize; 63usize],
+    pub bindgen_union_field: [u64; 63usize],
 }
 #[test]
 fn bindgen_test_layout_nk_page_data() {
