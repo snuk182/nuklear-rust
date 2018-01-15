@@ -72,59 +72,59 @@ pub const NK_FILTER_BINARY: NkPluginFilter = Some(nk_filter_binary);
 pub const ALIGNMENT: usize = 16;
 
 macro_rules! wrapper_impls {
-	($name: ident, $typ: ty) => {
-		impl AsRef<$typ> for $name {
-		    fn as_ref(&self) -> &$typ {
-		        &self.internal
-		    }
-		}
-		impl AsMut<$typ> for $name {
-		    fn as_mut(&mut self) -> &mut $typ {
-		        &mut self.internal
-		    }
-		}
-		impl AsRef<$name> for $typ {
-		    fn as_ref(&self) -> &$name {
-		        unsafe { ::std::mem::transmute(self) }
-		    }
-		}
-		impl AsMut<$name> for $typ {
-		    fn as_mut(&mut self) -> &mut $name {
-		        unsafe { ::std::mem::transmute(self) }
-		    }
-		}
-		
-		impl Default for $name {
-			fn default() -> Self {
-				$name {
-					internal: unsafe { ::std::mem::zeroed() },
-				}
-			}
-		}		
-	}
+    ($name: ident, $typ: ty) => {
+        impl AsRef<$typ> for $name {
+            fn as_ref(&self) -> &$typ {
+                &self.internal
+            }
+        }
+        impl AsMut<$typ> for $name {
+            fn as_mut(&mut self) -> &mut $typ {
+                &mut self.internal
+            }
+        }
+        impl AsRef<$name> for $typ {
+            fn as_ref(&self) -> &$name {
+                unsafe { ::std::mem::transmute(self) }
+            }
+        }
+        impl AsMut<$name> for $typ {
+            fn as_mut(&mut self) -> &mut $name {
+                unsafe { ::std::mem::transmute(self) }
+            }
+        }
+        
+        impl Default for $name {
+            fn default() -> Self {
+                $name {
+                    internal: unsafe { ::std::mem::zeroed() },
+                }
+            }
+        }        
+    }
 }
 
 macro_rules! wrapper_type {
-	($name: ident, $typ: ty) => {
-		#[derive(Clone,Debug)]
-		#[repr(C)]
-		pub struct $name {
-			internal: $typ
-		}
-		
-		wrapper_impls!($name, $typ);
-	}
+    ($name: ident, $typ: ty) => {
+        #[derive(Clone,Debug)]
+        #[repr(C)]
+        pub struct $name {
+            internal: $typ
+        }
+        
+        wrapper_impls!($name, $typ);
+    }
 }
 
 macro_rules! wrapper_type_no_clone {
-	($name: ident, $typ: ty) => {
-		#[repr(C)]
-		pub struct $name {
-			internal: $typ
-		}
-		
-		wrapper_impls!($name, $typ);
-	}
+    ($name: ident, $typ: ty) => {
+        #[repr(C)]
+        pub struct $name {
+            internal: $typ
+        }
+        
+        wrapper_impls!($name, $typ);
+    }
 }
 
 // ==========================================================================================================
@@ -2733,17 +2733,17 @@ impl<'a> NkCursorMap<'a> {
 wrapper_type!(NkCursor, nk_cursor);
 
 impl NkCursor {
-	pub fn img(&self) -> &NkImage {
-		unsafe {
-			::std::mem::transmute(&self.internal.img)
-		}
-	}
+    pub fn img(&self) -> &NkImage {
+        unsafe {
+            ::std::mem::transmute(&self.internal.img)
+        }
+    }
     pub fn size(&self) -> &NkVec2 {
-		&self.internal.size
-	}
+        &self.internal.size
+    }
     pub fn offset(&self) -> &NkVec2 {
-		&self.internal.offset
-	}
+        &self.internal.offset
+    }
 }
 
 // ==================================================================================
@@ -2860,11 +2860,11 @@ impl NkStyleItem {
 wrapper_type_no_clone!(NkTextEdit, nk_text_edit);
 
 impl Drop for NkTextEdit {
-	fn drop(&mut self) {
-		unsafe {
+    fn drop(&mut self) {
+        unsafe {
             nk_textedit_free(&mut self.internal);
         }
-	}
+    }
 }
 
 impl NkTextEdit {
@@ -3061,9 +3061,9 @@ wrapper_type!(NkFontAtlas, nk_font_atlas);
 pub type NkFontID = usize;
 
 impl Drop for NkFontAtlas {
-	fn drop(&mut self) {
-		self.clear();
-	}
+    fn drop(&mut self) {
+        self.clear();
+    }
 }
 
 impl NkFontAtlas {
@@ -3075,23 +3075,24 @@ impl NkFontAtlas {
         a
     }
 
-    pub fn add_font_with_config(&mut self, cfg: &NkFontConfig) -> Option<Box<NkFont>> {
+    pub fn add_font_with_config(&mut self, cfg: &NkFontConfig) -> Option<NkFontID> {
         unsafe {
             if self.internal.font_num < 1 {
-	            nk_font_atlas_begin(&mut self.internal as *mut nk_font_atlas);
-	        }
-	
-	        let ret = nk_font_atlas_add(&mut self.internal as *mut nk_font_atlas, &cfg.internal as *const nk_font_config);
-	        
-	        if !ret.is_null() && self.internal.font_num > 0 { 
-	        	Some(Box::from_raw(ret as *mut _ as *mut NkFont)) 
-	        } else { 
-	        	None 
-	        }
+                nk_font_atlas_begin(&mut self.internal as *mut nk_font_atlas);
+            }
+            let current = self.internal.font_num;
+    
+            let ret = nk_font_atlas_add(&mut self.internal as *mut nk_font_atlas, &cfg.internal as *const nk_font_config);
+            
+            if !ret.is_null() && (self.internal.font_num - current) == 1 { 
+                Some(current as NkFontID) 
+            } else { 
+                None 
+            }
         }
     }
 
-    pub fn add_font_with_bytes(&mut self, font_bytes: &[u8], font_size: f32) -> Option<Box<NkFont>> {
+    pub fn add_font_with_bytes(&mut self, font_bytes: &[u8], font_size: f32) -> Option<NkFontID> {
         let mut cfg = NkFontConfig::with_size(font_size);
 
         cfg.internal.ttf_size = font_bytes.len();
@@ -3136,7 +3137,8 @@ impl NkFontAtlas {
                               nullt);
         }
     }
-
+    
+    // TODO Not sure if this has to be left as a standalone method, as techically the font atlas cannot be used afterwards anymore
     pub fn clear(&mut self) {
         unsafe {
             nk_font_atlas_clear(&mut self.internal as *mut nk_font_atlas);
@@ -3166,44 +3168,75 @@ impl NkFontAtlas {
     }
     
     pub fn pixels(&self) -> &[u8] {
-    	unsafe {
-    		::std::slice::from_raw_parts(self.internal.pixel as *const _ as *const u8, (self.internal.tex_width * self.internal.tex_height * 4) as usize)
-    	}
+        unsafe {
+            ::std::slice::from_raw_parts(self.internal.pixel as *const _ as *const u8, (self.internal.tex_width * self.internal.tex_height * 4) as usize)
+        }
     }
     
     pub fn tex_width(&self) -> u16 {
-    	self.internal.tex_width as u16
+        self.internal.tex_width as u16
     }
     
     pub fn tex_height(&self) -> u16 {
-    	self.internal.tex_height as u16
+        self.internal.tex_height as u16
     }
     
     pub fn custom(&self) -> NkRecti {
-    	self.internal.custom
+        self.internal.custom
     }
     
     pub fn cursors(&self) -> &[NkCursor] {
-    	unsafe {
-    		::std::slice::from_raw_parts(self.internal.cursors.as_ptr() as *const NkCursor, self.internal.cursors.len())
-    	}
+        unsafe {
+            ::std::slice::from_raw_parts(self.internal.cursors.as_ptr() as *const NkCursor, self.internal.cursors.len())
+        }
     }
     
     pub fn glyphs(&self) -> &[NkFontGlyph] {
-    	unsafe {
-    		::std::slice::from_raw_parts(self.internal.glyphs as *const _ as *const NkFontGlyph, self.internal.glyph_count as usize)
-    	}
+        unsafe {
+            ::std::slice::from_raw_parts(self.internal.glyphs as *const _ as *const NkFontGlyph, self.internal.glyph_count as usize)
+        }
     }
     
-    pub fn fonts(&self) -> &[NkFont] {
-    	unsafe {
-    		::std::slice::from_raw_parts(self.internal.fonts as *const _ as *const NkFont, self.internal.font_num as usize)
-    	}
+    pub fn fonts_iterator<'a>(&'a self) -> NkFontIterator<'a> {
+        NkFontIterator {
+            ctx: self
+        }
     }
-    pub fn configs(&self) -> &[NkFontConfig] {
-    	unsafe {
-    		::std::slice::from_raw_parts(self.internal.config as *const _ as *const NkFontConfig, self.internal.font_num as usize)
-    	}
+    
+    pub fn font(&self, id: NkFontID) -> Option<&NkFont> {
+        self.fonts_iterator().into_iter().nth(id)
+    }
+}
+
+pub struct NkFontIterator<'a> {
+    ctx: &'a NkFontAtlas,
+}
+impl<'a> IntoIterator for NkFontIterator<'a> {
+    type Item = &'a NkFont;
+    type IntoIter = NkFontIntoIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let font = if self.ctx.internal.fonts.is_null() { None } else { Some(unsafe { ::std::mem::transmute(self.ctx.internal.fonts) }) };
+        NkFontIntoIter {
+            font: font,
+        }
+    }
+}
+pub struct NkFontIntoIter<'a> {
+    font: Option<&'a NkFont>,
+}
+impl<'a> Iterator for NkFontIntoIter<'a> {
+    type Item = &'a NkFont;
+    fn next(&mut self) -> Option<&'a NkFont> {
+        let r = self.font.clone();
+
+        self.font = if let Some(p) = self.font {
+            if p.internal.next.is_null() { None } else { Some(unsafe { ::std::mem::transmute(p.internal.next) }) }
+        } else {
+            None
+        };
+
+        r
     }
 }
 
@@ -3218,11 +3251,11 @@ const DEFAULT_BUFFER_SIZE: usize = 8096;
 wrapper_type!(NkBuffer, nk_buffer);
 
 impl Drop for NkBuffer {
-	fn drop(&mut self) {
-		unsafe {
+    fn drop(&mut self) {
+        unsafe {
             nk_buffer_free(&mut self.internal);
         }
-	}
+    }
 }
 
 impl NkBuffer {
@@ -3299,11 +3332,11 @@ impl Default for NkContext {
 }
 
 impl Drop for NkContext {
-	fn drop(&mut self) {
-		unsafe {
+    fn drop(&mut self) {
+        unsafe {
             nk_free(&mut self.internal as *mut nk_context);
         }
-	}
+    }
 }
 
 impl NkContext {
@@ -5051,60 +5084,60 @@ impl NkWindow {
         self.internal.scrollbar_hiding_timer
     }
     pub fn buffer(&self) -> &NkCommandBuffer {
-    	unsafe {
-    		::std::mem::transmute(&self.internal.buffer)
-    	}
+        unsafe {
+            ::std::mem::transmute(&self.internal.buffer)
+        }
     }
     pub fn layout(&self) -> &NkPanel {
-    	unsafe {
-    		::std::mem::transmute(self.internal.layout)
-    	}
+        unsafe {
+            ::std::mem::transmute(self.internal.layout)
+        }
     }
     pub fn layout_mut(&mut self) -> &mut NkPanel {
-    	unsafe {
-    		::std::mem::transmute(self.internal.layout)
-    	}
+        unsafe {
+            ::std::mem::transmute(self.internal.layout)
+        }
     }
     pub fn property(&self) -> &NkPropertyState {
-    	unsafe {
-    		::std::mem::transmute(&self.internal.property)
-    	}
+        unsafe {
+            ::std::mem::transmute(&self.internal.property)
+        }
     }
     pub fn popup(&self) -> &NkPopupState {
-    	unsafe {
-    		::std::mem::transmute(&self.internal.popup)
-    	}
+        unsafe {
+            ::std::mem::transmute(&self.internal.popup)
+        }
     }
     pub fn edit(&self) -> &NkEditState {
-    	unsafe {
-    		::std::mem::transmute(&self.internal.edit)
-    	}
+        unsafe {
+            ::std::mem::transmute(&self.internal.edit)
+        }
     }
     pub fn scrolled(&self) -> u32 {
-    	self.internal.scrolled
+        self.internal.scrolled
     }
     pub fn tables(&self) -> &[NkTable] {
-    	unsafe {
-    		::std::slice::from_raw_parts(self.internal.tables as *mut _ as *const NkTable, self.internal.table_count as usize)
-    	}
+        unsafe {
+            ::std::slice::from_raw_parts(self.internal.tables as *mut _ as *const NkTable, self.internal.table_count as usize)
+        }
     }
     pub fn table_size(&self) -> u16 {
-    	self.internal.table_size
+        self.internal.table_size
     }
     pub fn prev(&self) -> &NkWindow {
-    	unsafe {
-    		::std::mem::transmute(self.internal.prev)
-    	}
+        unsafe {
+            ::std::mem::transmute(self.internal.prev)
+        }
     }
     pub fn next(&self) -> &NkWindow {
-    	unsafe {
-    		::std::mem::transmute(self.internal.next)
-    	}
+        unsafe {
+            ::std::mem::transmute(self.internal.next)
+        }
     }
     pub fn parent(&self) -> &NkWindow {
-    	unsafe {
-    		::std::mem::transmute(self.internal.parent)
-    	}
+        unsafe {
+            ::std::mem::transmute(self.internal.parent)
+        }
     }
 
     pub fn set_flags(&mut self, flags: NkFlags) {
@@ -5415,21 +5448,21 @@ impl NkChart {
 // =============================================================================================
 
 macro_rules! emit_nk_command {
-	($rs_ty: ident, $nat_ty: ty) => {
-		wrapper_type!($rs_ty, $nat_ty);
-		
-		impl AsRef<$rs_ty> for NkCommand {
-			fn as_ref(&self) -> &$rs_ty {
-				unsafe { ::std::mem::transmute(&self.internal) }
-			}
-		}
-		
-		impl $rs_ty {
-		    pub fn header(&self) -> &NkCommand {
-			    unsafe { ::std::mem::transmute(&self.internal.header) }
-		    }
-		}		
-	}
+    ($rs_ty: ident, $nat_ty: ty) => {
+        wrapper_type!($rs_ty, $nat_ty);
+        
+        impl AsRef<$rs_ty> for NkCommand {
+            fn as_ref(&self) -> &$rs_ty {
+                unsafe { ::std::mem::transmute(&self.internal) }
+            }
+        }
+        
+        impl $rs_ty {
+            pub fn header(&self) -> &NkCommand {
+                unsafe { ::std::mem::transmute(&self.internal.header) }
+            }
+        }        
+    }
 }
 
 wrapper_type!(NkCommand, nk_command);
@@ -6065,14 +6098,6 @@ impl NkImage {
 // =============================================================================================
 
 wrapper_type!(NkFontGlyph, nk_font_glyph);
-
-// impl Default for NkFontGlyph {
-// fn default() -> Self {
-// NkFontGlyph {
-// internal: nk_font_glyph::default()
-// }
-// }
-// }
 
 impl NkFontGlyph {
     pub fn get_codepoint(&self) -> char {
