@@ -2859,18 +2859,20 @@ impl NkStyleItem {
 
 wrapper_type_no_clone!(NkTextEdit, nk_text_edit);
 
+impl Drop for NkTextEdit {
+	fn drop(&mut self) {
+		unsafe {
+            nk_textedit_free(&mut self.internal);
+        }
+	}
+}
+
 impl NkTextEdit {
     pub fn init(&mut self, arg2: &mut NkAllocator, size: usize) {
         unsafe {
             nk_textedit_init(&mut self.internal,
                              &mut arg2.internal as *mut nk_allocator,
                              size);
-        }
-    }
-
-    pub fn free(mut self) {
-        unsafe {
-            nk_textedit_free(&mut self.internal);
         }
     }
 
@@ -3058,6 +3060,12 @@ impl NkFontConfig {
 wrapper_type!(NkFontAtlas, nk_font_atlas);
 pub type NkFontID = usize;
 
+impl Drop for NkFontAtlas {
+	fn drop(&mut self) {
+		self.clear();
+	}
+}
+
 impl NkFontAtlas {
     pub fn new(alloc: &mut NkAllocator) -> NkFontAtlas {
         let mut a = NkFontAtlas::default();
@@ -3197,10 +3205,6 @@ impl NkFontAtlas {
     		::std::slice::from_raw_parts(self.internal.config as *const _ as *const NkFontConfig, self.internal.font_num as usize)
     	}
     }
-
-    /*pub permanent: nk_allocator,
-    pub temporary: nk_allocator,
-    pub default_font: *mut nk_font,*/
 }
 
 // =============================================================================================
@@ -3212,6 +3216,14 @@ wrapper_type!(NkDrawNullTexture, nk_draw_null_texture);
 const DEFAULT_BUFFER_SIZE: usize = 8096;
 
 wrapper_type!(NkBuffer, nk_buffer);
+
+impl Drop for NkBuffer {
+	fn drop(&mut self) {
+		unsafe {
+            nk_buffer_free(&mut self.internal);
+        }
+	}
+}
 
 impl NkBuffer {
     pub fn new(alloc: &mut NkAllocator) -> NkBuffer {
@@ -3286,6 +3298,14 @@ impl Default for NkContext {
     }
 }
 
+impl Drop for NkContext {
+	fn drop(&mut self) {
+		unsafe {
+            nk_free(&mut self.internal as *mut nk_context);
+        }
+	}
+}
+
 impl NkContext {
     pub fn new(alloc: &mut NkAllocator, font: &NkUserFont) -> NkContext {
         let mut a = NkContext::default();
@@ -3314,12 +3334,6 @@ impl NkContext {
     pub fn clear(&mut self) {
         unsafe {
             nk_clear(&mut self.internal as *mut nk_context);
-        }
-    }
-
-    pub fn free(&mut self) {
-        unsafe {
-            nk_free(&mut self.internal as *mut nk_context);
         }
     }
 
