@@ -11,7 +11,6 @@ mod alloc_vec;
 use std::default::Default;
 use std::os::raw::*;
 use std::borrow::Cow;
-use std::fmt::{Debug, Formatter};
 
 use nuklear_sys::*;
 
@@ -107,7 +106,7 @@ macro_rules! wrapper_impls {
 
 macro_rules! wrapper_type {
 	($name: ident, $typ: ty) => {
-		#[derive(Clone)]
+		#[derive(Clone,Debug)]
 		#[repr(C)]
 		pub struct $name {
 			internal: $typ
@@ -5424,12 +5423,6 @@ wrapper_type!(NkCommand, nk_command);
 impl NkCommand {
     pub fn get_type(&self) -> NkCommandType {
         self.internal.type_
-    }
-}
-
-impl Debug for NkCommand {
-    fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
-        self.internal.fmt(f)
     }
 }
 
