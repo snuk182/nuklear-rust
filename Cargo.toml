@@ -14,7 +14,6 @@ name = "nuklear_rust"
 path = "src/lib.rs"
 
 [dependencies]
-libc = "~0.2"
 log = "~0.3"
 
 [features]
@@ -24,7 +23,3 @@ rust_allocator = []
 [dependencies.nuklear-sys]
 path = "nuklear-sys"
 version = "~1.33"
-
-[build-dependencies]
-gcc = "~0.3"
-
