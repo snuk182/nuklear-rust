@@ -10,7 +10,7 @@ repository = "https://github.com/snuk182/nuklear-rust.git"
 homepage = "https://github.com/snuk182/nuklear-rust"
 
 [lib]
-name = "nuklear_rust"
+name = "nuklear"
 path = "src/lib.rs"
 
 [dependencies]
