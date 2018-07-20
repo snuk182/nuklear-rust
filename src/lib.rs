@@ -8,54 +8,54 @@ pub extern crate nuklear_sys;
 mod alloc_heap;
 mod alloc_vec;
 
+use std::borrow::Cow;
 use std::default::Default;
 use std::os::raw::*;
-use std::borrow::Cow;
 
 use nuklear_sys::*;
 
 //pub use nuklear_sys;
-pub use nuklear_sys::nk_font_atlas_format as FontAtlasFormat;
-pub use nuklear_sys::nk_flags as Flags; //TODO
-pub use nuklear_sys::nk_collapse_states as CollapseState;
-pub use nuklear_sys::nk_show_states as ShowState;
-pub use nuklear_sys::nk_layout_format as LayoutFormat;
-pub use nuklear_sys::nk_tree_type as TreeType;
-pub use nuklear_sys::nk_symbol_type as SymbolType;
-pub use nuklear_sys::nk_button_behavior as ButtonBehavior;
-pub use nuklear_sys::nk_color_format as ColorFormat;
-pub use nuklear_sys::nk_chart_type as ChartType;
-pub use nuklear_sys::nk_popup_type as PopupType;
-pub use nuklear_sys::nk_keys as Key;
-pub use nuklear_sys::nk_buttons as Button;
-pub use nuklear_sys::nk_style_colors as StyleColor;
-pub use nuklear_sys::nk_style_cursor as StyleCursor;
-pub use nuklear_sys::nk_widget_layout_states as WidgetLayoutState;
-pub use nuklear_sys::nk_draw_list_stroke as DrawListStroke;
-pub use nuklear_sys::nk_anti_aliasing as AntiAliasing;
 pub use nuklear_sys::nk_allocation_type as AllocationType;
+pub use nuklear_sys::nk_anti_aliasing as AntiAliasing;
+pub use nuklear_sys::nk_button_behavior as ButtonBehavior;
+pub use nuklear_sys::nk_buttons as Button;
+pub use nuklear_sys::nk_chart_type as ChartType;
+pub use nuklear_sys::nk_collapse_states as CollapseState;
+pub use nuklear_sys::nk_color_format as ColorFormat;
+pub use nuklear_sys::nk_command_type as CommandType;
+pub use nuklear_sys::nk_draw_list_stroke as DrawListStroke;
 pub use nuklear_sys::nk_draw_vertex_layout_attribute as DrawVertexLayoutAttribute;
 pub use nuklear_sys::nk_draw_vertex_layout_format as DrawVertexLayoutFormat;
 pub use nuklear_sys::nk_edit_types as EditType;
+pub use nuklear_sys::nk_flags as Flags; //TODO
+pub use nuklear_sys::nk_font_atlas_format as FontAtlasFormat;
 pub use nuklear_sys::nk_font_coord_type as FontCoordType;
-pub use nuklear_sys::nk_style_header_align as StyleHeaderAlign;
-pub use nuklear_sys::nk_panel_type as PanelType;
+pub use nuklear_sys::nk_keys as Key;
+pub use nuklear_sys::nk_layout_format as LayoutFormat;
 pub use nuklear_sys::nk_panel_row_layout_type as PanelRowLayoutType;
-pub use nuklear_sys::nk_command_type as CommandType;
+pub use nuklear_sys::nk_panel_type as PanelType;
+pub use nuklear_sys::nk_popup_type as PopupType;
+pub use nuklear_sys::nk_show_states as ShowState;
+pub use nuklear_sys::nk_style_colors as StyleColor;
+pub use nuklear_sys::nk_style_cursor as StyleCursor;
+pub use nuklear_sys::nk_style_header_align as StyleHeaderAlign;
+pub use nuklear_sys::nk_symbol_type as SymbolType;
+pub use nuklear_sys::nk_tree_type as TreeType;
+pub use nuklear_sys::nk_widget_layout_states as WidgetLayoutState;
 
 pub use nuklear_sys::nk_panel_flags as PanelFlags;
 pub use nuklear_sys::nk_text_alignment as TextAlignment;
 
-pub use nuklear_sys::nk_vec2 as Vec2;
-pub use nuklear_sys::nk_vec2i as Vec2i;
-pub use nuklear_sys::nk_scroll as Scroll;
+pub use nuklear_sys::nk_chart_slot as ChartSlot;
 pub use nuklear_sys::nk_color as Color;
+pub use nuklear_sys::nk_menu_state as MenuState;
+pub use nuklear_sys::nk_popup_buffer as PopupBuffer;
 pub use nuklear_sys::nk_rect as Rect;
 pub use nuklear_sys::nk_recti as Recti;
+pub use nuklear_sys::nk_scroll as Scroll;
 pub use nuklear_sys::nk_style_text as StyleText;
-pub use nuklear_sys::nk_menu_state as MenuState;
-pub use nuklear_sys::nk_chart_slot as ChartSlot;
-pub use nuklear_sys::nk_popup_buffer as PopupBuffer;
+pub use nuklear_sys::nk_vec2 as Vec2;
+pub use nuklear_sys::nk_vec2i as Vec2i;
 
 pub use nuklear_sys::nk_glyph as Glyph;
 
@@ -72,7 +72,7 @@ pub const NK_FILTER_BINARY: PluginFilter = Some(nk_filter_binary);
 pub const ALIGNMENT: usize = 16;
 
 macro_rules! wrapper_impls {
-    ($name: ident, $typ: ty) => {
+    ($name:ident, $typ:ty) => {
         impl AsRef<$typ> for $name {
             fn as_ref(&self) -> &$typ {
                 &self.internal
@@ -93,46 +93,43 @@ macro_rules! wrapper_impls {
                 unsafe { ::std::mem::transmute(self) }
             }
         }
-        
+
         impl Default for $name {
             fn default() -> Self {
-                $name {
-                    internal: unsafe { ::std::mem::zeroed() },
-                }
+                $name { internal: unsafe { ::std::mem::zeroed() } }
             }
-        }        
-    }
+        }
+    };
 }
 
 macro_rules! wrapper_type {
-    ($name: ident, $typ: ty) => {
-        #[derive(Clone,Debug)]
+    ($name:ident, $typ:ty) => {
+        #[derive(Clone, Debug)]
         #[repr(C)]
         pub struct $name {
-            internal: $typ
+            internal: $typ,
         }
-        
+
         wrapper_impls!($name, $typ);
-    }
+    };
 }
 
 macro_rules! wrapper_type_no_clone {
-    ($name: ident, $typ: ty) => {
+    ($name:ident, $typ:ty) => {
         #[repr(C)]
         pub struct $name {
-            internal: $typ
+            internal: $typ,
         }
-        
+
         wrapper_impls!($name, $typ);
-    }
+    };
 }
 
 // ==========================================================================================================
 
 unsafe extern "C" fn nk_filter_custom(arg1: *const nk_text_edit, unicode: nk_rune) -> ::std::os::raw::c_int {
     if let Some(f) = CUSTOM_EDIT_FILTER {
-        if f(::std::mem::transmute(arg1),
-             ::std::char::from_u32_unchecked(unicode)) {
+        if f(::std::mem::transmute(arg1), ::std::char::from_u32_unchecked(unicode)) {
             1
         } else {
             0
@@ -266,8 +263,8 @@ impl<'a> From<&'a str> for String<'a> {
     }
 }
 
-impl From<::std::string::String> for String<'static> {
-    fn from(mut value: ::std::string::String) -> String<'static> {
+impl<'a> From<::std::string::String> for String<'a> {
+    fn from(mut value: ::std::string::String) -> String<'a> {
         value.push('\0');
         String { bytes: Cow::Owned(value.into_bytes()) }
     }
@@ -2507,11 +2504,13 @@ impl DrawList {
 
     pub fn setup(&mut self, config: &ConvertConfig, cmds: &mut Buffer, vertices: &mut Buffer, elements: &mut Buffer) {
         unsafe {
-            nk_draw_list_setup(&mut self.internal,
-                               &config.internal as *const nk_convert_config,
-                               &mut cmds.internal as *mut nk_buffer,
-                               &mut vertices.internal as *mut nk_buffer,
-                               &mut elements.internal as *mut nk_buffer)
+            nk_draw_list_setup(
+                &mut self.internal,
+                &config.internal as *const nk_convert_config,
+                &mut cmds.internal as *mut nk_buffer,
+                &mut vertices.internal as *mut nk_buffer,
+                &mut elements.internal as *mut nk_buffer,
+            )
         }
     }
 
@@ -2601,26 +2600,13 @@ impl DrawList {
 
     pub fn stroke_curve(&mut self, p0: Vec2, cp0: Vec2, cp1: Vec2, p1: Vec2, arg2: Color, segments: u32, thickness: f32) {
         unsafe {
-            nk_draw_list_stroke_curve(&mut self.internal,
-                                      p0,
-                                      cp0,
-                                      cp1,
-                                      p1,
-                                      arg2,
-                                      segments,
-                                      thickness);
+            nk_draw_list_stroke_curve(&mut self.internal, p0, cp0, cp1, p1, arg2, segments, thickness);
         }
     }
 
     pub fn stroke_poly_line(&mut self, points: &[Vec2], arg2: Color, arg3: DrawListStroke, thickness: f32, aa: AntiAliasing) {
         unsafe {
-            nk_draw_list_stroke_poly_line(&mut self.internal,
-                                          points.as_ptr(),
-                                          points.len() as u32,
-                                          arg2,
-                                          arg3,
-                                          thickness,
-                                          aa);
+            nk_draw_list_stroke_poly_line(&mut self.internal, points.as_ptr(), points.len() as u32, arg2, arg3, thickness, aa);
         }
     }
 
@@ -2650,11 +2636,7 @@ impl DrawList {
 
     pub fn fill_poly_convex(&mut self, points: &[Vec2], arg2: Color, arg3: AntiAliasing) {
         unsafe {
-            nk_draw_list_fill_poly_convex(&mut self.internal,
-                                          points.as_ptr(),
-                                          points.len() as u32,
-                                          arg2,
-                                          arg3);
+            nk_draw_list_fill_poly_convex(&mut self.internal, points.as_ptr(), points.len() as u32, arg2, arg3);
         }
     }
 
@@ -2666,13 +2648,7 @@ impl DrawList {
 
     pub fn add_text(&mut self, arg2: &UserFont, arg3: Rect, text: String, font_height: f32, arg4: Color) {
         unsafe {
-            nk_draw_list_add_text(&mut self.internal,
-                                  &arg2.internal,
-                                  arg3,
-                                  text.as_ptr(),
-                                  text.bytes.len() as i32,
-                                  font_height,
-                                  arg4);
+            nk_draw_list_add_text(&mut self.internal, &arg2.internal, arg3, text.as_ptr(), text.bytes.len() as i32, font_height, arg4);
         }
     }
 
@@ -2734,9 +2710,7 @@ wrapper_type!(Cursor, nk_cursor);
 
 impl Cursor {
     pub fn img(&self) -> &Image {
-        unsafe {
-            ::std::mem::transmute(&self.internal.img)
-        }
+        unsafe { ::std::mem::transmute(&self.internal.img) }
     }
     pub fn size(&self) -> &Vec2 {
         &self.internal.size
@@ -2751,7 +2725,7 @@ impl Cursor {
 wrapper_type!(Allocator, nk_allocator);
 
 impl Allocator {
-    #[cfg(feature="rust_allocator")]
+    #[cfg(feature = "rust_allocator")]
     pub fn new_heap() -> Allocator {
         let mut a = Allocator::default();
 
@@ -2824,15 +2798,7 @@ pub struct DrawVertexLayoutElements {
 impl DrawVertexLayoutElements {
     pub fn new(var: &[(DrawVertexLayoutAttribute, DrawVertexLayoutFormat, u32)]) -> DrawVertexLayoutElements {
         DrawVertexLayoutElements {
-            arr: var.iter()
-                .map(|&(a, f, o)| {
-                         nk_draw_vertex_layout_element {
-                             attribute: a,
-                             format: f,
-                             offset: o as usize,
-                         }
-                     })
-                .collect::<Vec<_>>(),
+            arr: var.iter().map(|&(a, f, o)| nk_draw_vertex_layout_element { attribute: a, format: f, offset: o as usize }).collect::<Vec<_>>(),
         }
     }
 }
@@ -2870,25 +2836,19 @@ impl Drop for TextEdit {
 impl TextEdit {
     pub fn init(&mut self, arg2: &mut Allocator, size: usize) {
         unsafe {
-            nk_textedit_init(&mut self.internal,
-                             &mut arg2.internal as *mut nk_allocator,
-                             size);
+            nk_textedit_init(&mut self.internal, &mut arg2.internal as *mut nk_allocator, size);
         }
     }
 
     pub fn text(&mut self, arg2: &str) {
         unsafe {
-            nk_textedit_text(&mut self.internal,
-                             arg2.as_ptr() as *const i8,
-                             arg2.as_bytes().len() as ::std::os::raw::c_int);
+            nk_textedit_text(&mut self.internal, arg2.as_ptr() as *const i8, arg2.as_bytes().len() as ::std::os::raw::c_int);
         }
     }
 
     pub fn delete(&mut self, where_: u32, len: u32) {
         unsafe {
-            nk_textedit_delete(&mut self.internal,
-                               where_ as ::std::os::raw::c_int,
-                               len as ::std::os::raw::c_int);
+            nk_textedit_delete(&mut self.internal, where_ as ::std::os::raw::c_int, len as ::std::os::raw::c_int);
         }
     }
 
@@ -2909,11 +2869,7 @@ impl TextEdit {
     }
 
     pub fn paste(&mut self, arg2: &str) -> bool {
-        unsafe {
-            nk_textedit_paste(&mut self.internal,
-                              arg2.as_ptr() as *const i8,
-                              arg2.as_bytes().len() as ::std::os::raw::c_int) != 0
-        }
+        unsafe { nk_textedit_paste(&mut self.internal, arg2.as_ptr() as *const i8, arg2.as_bytes().len() as ::std::os::raw::c_int) != 0 }
     }
 
     pub fn undo(&mut self) {
@@ -3069,9 +3025,7 @@ impl Drop for FontAtlas {
 impl FontAtlas {
     pub fn new(alloc: &mut Allocator) -> FontAtlas {
         let mut a = FontAtlas::default();
-
         a.init(alloc);
-
         a
     }
 
@@ -3081,13 +3035,13 @@ impl FontAtlas {
                 nk_font_atlas_begin(&mut self.internal as *mut nk_font_atlas);
             }
             let current = self.internal.font_num;
-    
+
             let ret = nk_font_atlas_add(&mut self.internal as *mut nk_font_atlas, &cfg.internal as *const nk_font_config);
-            
-            if !ret.is_null() && (self.internal.font_num - current) == 1 { 
-                Some(current as FontID) 
-            } else { 
-                None 
+
+            if !ret.is_null() && (self.internal.font_num - current) == 1 {
+                Some(current as FontID)
+            } else {
+                None
             }
         }
     }
@@ -3107,21 +3061,16 @@ impl FontAtlas {
         let mut width: i32 = 0;
         let mut height: i32 = 0;
 
-        let image = unsafe {
-            nk_font_atlas_bake(&mut self.internal as *mut nk_font_atlas,
-                               &mut width as *mut c_int,
-                               &mut height as *mut c_int,
-                               format)
-        };
+        let image = unsafe { nk_font_atlas_bake(&mut self.internal as *mut nk_font_atlas, &mut width as *mut c_int, &mut height as *mut c_int, format) };
 
         if width < 1 || height < 1 {
             return (&[], width as u32, height as u32);
         }
 
         let size = (match format {
-                        FontAtlasFormat::NK_FONT_ATLAS_ALPHA8 => 1,
-                        FontAtlasFormat::NK_FONT_ATLAS_RGBA32 => 4,
-                    } * width * height) as usize;
+            FontAtlasFormat::NK_FONT_ATLAS_ALPHA8 => 1,
+            FontAtlasFormat::NK_FONT_ATLAS_RGBA32 => 4,
+        } * width * height) as usize;
 
         (unsafe { ::std::slice::from_raw_parts(image as *const u8, size) }, width as u32, height as u32)
     }
@@ -3132,14 +3081,17 @@ impl FontAtlas {
             None => ::std::ptr::null_mut(),
         };
         unsafe {
-            nk_font_atlas_end(&mut self.internal as *mut nk_font_atlas,
-                              hnd.internal,
-                              nullt);
+            nk_font_atlas_end(&mut self.internal as *mut nk_font_atlas, hnd.internal, nullt);
         }
     }
-    
-    // TODO Not sure if this has to be left as a standalone method, as techically the font atlas cannot be used afterwards anymore
-    pub fn clear(&mut self) {
+
+    pub fn cleanup(&mut self) {
+        unsafe {
+            nk_font_atlas_cleanup(&mut self.internal as *mut nk_font_atlas);
+        }
+    }
+
+    fn clear(&mut self) {
         unsafe {
             nk_font_atlas_clear(&mut self.internal as *mut nk_font_atlas);
         }
@@ -3147,17 +3099,14 @@ impl FontAtlas {
 
     fn init(&mut self, arg2: &mut Allocator) {
         unsafe {
-            nk_font_atlas_init(&mut self.internal as *mut nk_font_atlas,
-                               &mut arg2.internal as *mut nk_allocator);
+            nk_font_atlas_init(&mut self.internal as *mut nk_font_atlas, &mut arg2.internal as *mut nk_allocator);
         }
     }
 
     #[allow(dead_code)]
     fn init_custom(&mut self, persistent: &mut Allocator, transient: &mut Allocator) {
         unsafe {
-            nk_font_atlas_init_custom(&mut self.internal as *mut nk_font_atlas,
-                                      &mut persistent.internal as *mut nk_allocator,
-                                      &mut transient.internal as *mut nk_allocator);
+            nk_font_atlas_init_custom(&mut self.internal as *mut nk_font_atlas, &mut persistent.internal as *mut nk_allocator, &mut transient.internal as *mut nk_allocator);
         }
     }
 
@@ -3166,43 +3115,35 @@ impl FontAtlas {
             nk_font_atlas_begin(&mut self.internal as *mut nk_font_atlas);
         }
     }
-    
+
     pub fn pixels(&self) -> &[u8] {
-        unsafe {
-            ::std::slice::from_raw_parts(self.internal.pixel as *const _ as *const u8, (self.internal.tex_width * self.internal.tex_height * 4) as usize)
-        }
+        unsafe { ::std::slice::from_raw_parts(self.internal.pixel as *const _ as *const u8, (self.internal.tex_width * self.internal.tex_height * 4) as usize) }
     }
-    
+
     pub fn tex_width(&self) -> u16 {
         self.internal.tex_width as u16
     }
-    
+
     pub fn tex_height(&self) -> u16 {
         self.internal.tex_height as u16
     }
-    
+
     pub fn custom(&self) -> Recti {
         self.internal.custom
     }
-    
+
     pub fn cursors(&self) -> &[Cursor] {
-        unsafe {
-            ::std::slice::from_raw_parts(self.internal.cursors.as_ptr() as *const Cursor, self.internal.cursors.len())
-        }
+        unsafe { ::std::slice::from_raw_parts(self.internal.cursors.as_ptr() as *const Cursor, self.internal.cursors.len()) }
     }
-    
+
     pub fn glyphs(&self) -> &[FontGlyph] {
-        unsafe {
-            ::std::slice::from_raw_parts(self.internal.glyphs as *const _ as *const FontGlyph, self.internal.glyph_count as usize)
-        }
+        unsafe { ::std::slice::from_raw_parts(self.internal.glyphs as *const _ as *const FontGlyph, self.internal.glyph_count as usize) }
     }
-    
+
     pub fn fonts_iterator<'a>(&'a self) -> FontIterator<'a> {
-        FontIterator {
-            ctx: self
-        }
+        FontIterator { ctx: self }
     }
-    
+
     pub fn font(&self, id: FontID) -> Option<&Font> {
         self.fonts_iterator().into_iter().nth(id)
     }
@@ -3217,9 +3158,7 @@ impl<'a> IntoIterator for FontIterator<'a> {
 
     fn into_iter(self) -> Self::IntoIter {
         let font = if self.ctx.internal.fonts.is_null() { None } else { Some(unsafe { ::std::mem::transmute(self.ctx.internal.fonts) }) };
-        FontIntoIter {
-            font: font,
-        }
+        FontIntoIter { font: font }
     }
 }
 pub struct FontIntoIter<'a> {
@@ -3231,7 +3170,11 @@ impl<'a> Iterator for FontIntoIter<'a> {
         let r = self.font.clone();
 
         self.font = if let Some(p) = self.font {
-            if p.internal.next.is_null() { None } else { Some(unsafe { ::std::mem::transmute(p.internal.next) }) }
+            if p.internal.next.is_null() {
+                None
+            } else {
+                Some(unsafe { ::std::mem::transmute(p.internal.next) })
+            }
         } else {
             None
         };
@@ -3266,9 +3209,7 @@ impl Buffer {
     pub fn with_size(alloc: &mut Allocator, buffer_size: usize) -> Buffer {
         let mut a = Buffer::default();
         unsafe {
-            nk_buffer_init(&mut a.internal as *mut nk_buffer,
-                           &mut alloc.internal as *const nk_allocator,
-                           buffer_size);
+            nk_buffer_init(&mut a.internal as *mut nk_buffer, &mut alloc.internal as *const nk_allocator, buffer_size);
         }
         a
     }
@@ -3276,9 +3217,7 @@ impl Buffer {
     pub fn with_fixed(memory: &mut [u8]) -> Buffer {
         let mut a = Buffer::default();
         unsafe {
-            nk_buffer_init_fixed(&mut a.internal as *mut nk_buffer,
-                                 memory as *mut _ as *mut ::std::os::raw::c_void,
-                                 memory.len());
+            nk_buffer_init_fixed(&mut a.internal as *mut nk_buffer, memory as *mut _ as *mut ::std::os::raw::c_void, memory.len());
         }
         a
     }
@@ -3344,9 +3283,7 @@ impl Context {
         let mut a = Context::default();
 
         unsafe {
-            nk_init(&mut a.internal as *mut nk_context,
-                    &mut alloc.internal,
-                    &font.internal);
+            nk_init(&mut a.internal as *mut nk_context, &mut alloc.internal, &font.internal);
         }
 
         a
@@ -3371,22 +3308,11 @@ impl Context {
     }
 
     pub fn begin(&mut self, title: String, bounds: Rect, flags: Flags) -> bool {
-        unsafe {
-            nk_begin(&mut self.internal as *mut nk_context,
-                     title.as_ptr(),
-                     bounds,
-                     flags) != 0
-        }
+        unsafe { nk_begin(&mut self.internal as *mut nk_context, title.as_ptr(), bounds, flags) != 0 }
     }
 
     pub fn begin_titled(&mut self, name: String, title: String, bounds: Rect, flags: Flags) -> i32 {
-        unsafe {
-            nk_begin_titled(&mut self.internal as *mut nk_context,
-                            name.as_ptr(),
-                            title.as_ptr(),
-                            bounds,
-                            flags)
-        }
+        unsafe { nk_begin_titled(&mut self.internal as *mut nk_context, name.as_ptr(), title.as_ptr(), bounds, flags) }
     }
 
     pub fn end(&mut self) {
@@ -3536,10 +3462,7 @@ impl Context {
 
     pub fn window_collapse_if(&mut self, name: String, state: CollapseState, cond: bool) {
         unsafe {
-            nk_window_collapse_if(&mut self.internal as *mut nk_context,
-                                  name.as_ptr(),
-                                  state,
-                                  if cond { 1 } else { 0 });
+            nk_window_collapse_if(&mut self.internal as *mut nk_context, name.as_ptr(), state, if cond { 1 } else { 0 });
         }
     }
 
@@ -3551,10 +3474,7 @@ impl Context {
 
     pub fn window_show_if(&mut self, name: String, state: ShowState, cond: bool) {
         unsafe {
-            nk_window_show_if(&mut self.internal as *mut nk_context,
-                              name.as_ptr(),
-                              state,
-                              if cond { 1 } else { 0 });
+            nk_window_show_if(&mut self.internal as *mut nk_context, name.as_ptr(), state, if cond { 1 } else { 0 });
         }
     }
 
@@ -3566,10 +3486,7 @@ impl Context {
 
     pub fn layout_row_static(&mut self, height: f32, item_width: i32, cols: i32) {
         unsafe {
-            nk_layout_row_static(&mut self.internal as *mut nk_context,
-                                 height,
-                                 item_width,
-                                 cols);
+            nk_layout_row_static(&mut self.internal as *mut nk_context, height, item_width, cols);
         }
     }
 
@@ -3593,20 +3510,13 @@ impl Context {
 
     pub fn layout_row(&mut self, fmt: LayoutFormat, height: f32, cols_ratio: &[f32]) {
         unsafe {
-            nk_layout_row(&mut self.internal as *mut nk_context,
-                          fmt,
-                          height,
-                          cols_ratio.len() as i32,
-                          cols_ratio.as_ptr());
+            nk_layout_row(&mut self.internal as *mut nk_context, fmt, height, cols_ratio.len() as i32, cols_ratio.as_ptr());
         }
     }
 
     pub fn layout_space_begin(&mut self, fmt: LayoutFormat, height: f32, widget_count: i32) {
         unsafe {
-            nk_layout_space_begin(&mut self.internal as *mut nk_context,
-                                  fmt,
-                                  height,
-                                  widget_count);
+            nk_layout_space_begin(&mut self.internal as *mut nk_context, fmt, height, widget_count);
         }
     }
 
@@ -3657,28 +3567,11 @@ impl Context {
     }
 
     pub fn tree_push_hashed(&mut self, ty: TreeType, title: String, initial_state: CollapseState, hash: String, len: i32, seed: i32) -> i32 {
-        unsafe {
-            nk_tree_push_hashed(&mut self.internal as *mut nk_context,
-                                ty,
-                                title.as_ptr(),
-                                initial_state,
-                                hash.as_ptr(),
-                                len,
-                                seed)
-        }
+        unsafe { nk_tree_push_hashed(&mut self.internal as *mut nk_context, ty, title.as_ptr(), initial_state, hash.as_ptr(), len, seed) }
     }
 
     pub fn tree_image_push_hashed(&mut self, ty: TreeType, i: Image, title: String, initial_state: CollapseState, hash: String, len: i32, seed: i32) -> i32 {
-        unsafe {
-            nk_tree_image_push_hashed(&mut self.internal as *mut nk_context,
-                                      ty,
-                                      i.internal,
-                                      title.as_ptr(),
-                                      initial_state,
-                                      hash.as_ptr(),
-                                      len,
-                                      seed)
-        }
+        unsafe { nk_tree_image_push_hashed(&mut self.internal as *mut nk_context, ty, i.internal, title.as_ptr(), initial_state, hash.as_ptr(), len, seed) }
     }
 
     pub fn tree_pop(&mut self) {
@@ -3689,37 +3582,25 @@ impl Context {
 
     pub fn text(&mut self, text: &str, flags: Flags) {
         unsafe {
-            nk_text(&mut self.internal as *mut nk_context,
-                    text.as_ptr() as *const i8,
-                    text.as_bytes().len() as i32,
-                    flags);
+            nk_text(&mut self.internal as *mut nk_context, text.as_ptr() as *const i8, text.as_bytes().len() as i32, flags);
         }
     }
 
     pub fn text_colored(&mut self, text: &str, flags: Flags, color: Color) {
         unsafe {
-            nk_text_colored(&mut self.internal as *mut nk_context,
-                            text.as_ptr() as *const i8,
-                            text.as_bytes().len() as i32,
-                            flags,
-                            color);
+            nk_text_colored(&mut self.internal as *mut nk_context, text.as_ptr() as *const i8, text.as_bytes().len() as i32, flags, color);
         }
     }
 
     pub fn text_wrap(&mut self, text: &str) {
         unsafe {
-            nk_text_wrap(&mut self.internal as *mut nk_context,
-                         text.as_ptr() as *const i8,
-                         text.as_bytes().len() as i32);
+            nk_text_wrap(&mut self.internal as *mut nk_context, text.as_ptr() as *const i8, text.as_bytes().len() as i32);
         }
     }
 
     pub fn text_wrap_colored(&mut self, text: &str, color: Color) {
         unsafe {
-            nk_text_wrap_colored(&mut self.internal as *mut nk_context,
-                                 text.as_ptr() as *const i8,
-                                 text.as_bytes().len() as i32,
-                                 color);
+            nk_text_wrap_colored(&mut self.internal as *mut nk_context, text.as_ptr() as *const i8, text.as_bytes().len() as i32, color);
         }
     }
 
@@ -3731,10 +3612,7 @@ impl Context {
 
     pub fn label_colored(&mut self, text: String, flags: Flags, color: Color) {
         unsafe {
-            nk_label_colored(&mut self.internal as *mut nk_context,
-                             text.as_ptr(),
-                             flags,
-                             color);
+            nk_label_colored(&mut self.internal as *mut nk_context, text.as_ptr(), flags, color);
         }
     }
 
@@ -3757,11 +3635,7 @@ impl Context {
     }
 
     pub fn button_text(&mut self, text: &str) -> bool {
-        unsafe {
-            nk_button_text(&mut self.internal as *mut nk_context,
-                           text.as_ptr() as *const i8,
-                           text.as_bytes().len() as i32) != 0
-        }
+        unsafe { nk_button_text(&mut self.internal as *mut nk_context, text.as_ptr() as *const i8, text.as_bytes().len() as i32) != 0 }
     }
 
     pub fn button_label(&mut self, title: String) -> bool {
@@ -3781,41 +3655,19 @@ impl Context {
     }
 
     pub fn button_symbol_label(&mut self, ty: SymbolType, title: String, text_alignment: Flags) -> bool {
-        unsafe {
-            nk_button_symbol_label(&mut self.internal as *mut nk_context,
-                                   ty,
-                                   title.as_ptr(),
-                                   text_alignment) != 0
-        }
+        unsafe { nk_button_symbol_label(&mut self.internal as *mut nk_context, ty, title.as_ptr(), text_alignment) != 0 }
     }
 
     pub fn button_symbol_text(&mut self, ty: SymbolType, title: &str, text_alignment: Flags) -> bool {
-        unsafe {
-            nk_button_symbol_text(&mut self.internal as *mut nk_context,
-                                  ty,
-                                  title.as_ptr() as *const i8,
-                                  title.as_bytes().len() as i32,
-                                  text_alignment) != 0
-        }
+        unsafe { nk_button_symbol_text(&mut self.internal as *mut nk_context, ty, title.as_ptr() as *const i8, title.as_bytes().len() as i32, text_alignment) != 0 }
     }
 
     pub fn button_image_label(&mut self, img: Image, title: String, text_alignment: Flags) -> bool {
-        unsafe {
-            nk_button_image_label(&mut self.internal as *mut nk_context,
-                                  img.internal,
-                                  title.as_ptr(),
-                                  text_alignment) != 0
-        }
+        unsafe { nk_button_image_label(&mut self.internal as *mut nk_context, img.internal, title.as_ptr(), text_alignment) != 0 }
     }
 
     pub fn button_image_text(&mut self, img: Image, title: &str, text_alignment: Flags) -> bool {
-        unsafe {
-            nk_button_image_text(&mut self.internal as *mut nk_context,
-                                 img.internal,
-                                 title.as_ptr() as *const i8,
-                                 title.as_bytes().len() as i32,
-                                 text_alignment) != 0
-        }
+        unsafe { nk_button_image_text(&mut self.internal as *mut nk_context, img.internal, title.as_ptr() as *const i8, title.as_bytes().len() as i32, text_alignment) != 0 }
     }
 
     pub fn button_set_behavior(&mut self, b: ButtonBehavior) {
@@ -3833,48 +3685,24 @@ impl Context {
     }
 
     pub fn check_label(&mut self, title: String, active: bool) -> i32 {
-        unsafe {
-            nk_check_label(&mut self.internal as *mut nk_context,
-                           title.as_ptr(),
-                           if active { 1 } else { 0 })
-        }
+        unsafe { nk_check_label(&mut self.internal as *mut nk_context, title.as_ptr(), if active { 1 } else { 0 }) }
     }
 
     pub fn check_text(&mut self, title: &str, active: bool) -> i32 {
-        unsafe {
-            nk_check_text(&mut self.internal as *mut nk_context,
-                          title.as_ptr() as *const i8,
-                          title.as_bytes().len() as i32,
-                          if active { 1 } else { 0 })
-        }
+        unsafe { nk_check_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, if active { 1 } else { 0 }) }
     }
 
     pub fn check_flags_label(&mut self, title: String, flags: u32, value: u32) -> u32 {
-        unsafe {
-            nk_check_flags_label(&mut self.internal as *mut nk_context,
-                                 title.as_ptr(),
-                                 flags,
-                                 value)
-        }
+        unsafe { nk_check_flags_label(&mut self.internal as *mut nk_context, title.as_ptr(), flags, value) }
     }
 
     pub fn check_flags_text(&mut self, title: &str, flags: u32, value: u32) -> u32 {
-        unsafe {
-            nk_check_flags_text(&mut self.internal as *mut nk_context,
-                                title.as_ptr() as *const i8,
-                                title.as_bytes().len() as i32,
-                                flags,
-                                value)
-        }
+        unsafe { nk_check_flags_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, flags, value) }
     }
 
     pub fn checkbox_label(&mut self, title: String, active: &mut bool) -> bool {
         let mut i = if *active { 1 } else { 0 };
-        let r = unsafe {
-            nk_checkbox_label(&mut self.internal as *mut nk_context,
-                              title.as_ptr(),
-                              &mut i as *mut i32) != 0
-        };
+        let r = unsafe { nk_checkbox_label(&mut self.internal as *mut nk_context, title.as_ptr(), &mut i as *mut i32) != 0 };
 
         *active = i != 0;
         r
@@ -3882,43 +3710,23 @@ impl Context {
 
     pub fn checkbox_text(&mut self, title: &str, active: &mut bool) -> bool {
         let mut i = if *active { 1 } else { 0 };
-        let r = unsafe {
-            nk_checkbox_text(&mut self.internal as *mut nk_context,
-                             title.as_ptr() as *const i8,
-                             title.as_bytes().len() as i32,
-                             &mut i as *mut i32) != 0
-        };
+        let r = unsafe { nk_checkbox_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, &mut i as *mut i32) != 0 };
 
         *active = i != 0;
         r
     }
 
     pub fn checkbox_flags_label(&mut self, title: String, flags: &mut u32, value: u32) -> bool {
-        unsafe {
-            nk_checkbox_flags_label(&mut self.internal as *mut nk_context,
-                                    title.as_ptr(),
-                                    flags,
-                                    value) != 0
-        }
+        unsafe { nk_checkbox_flags_label(&mut self.internal as *mut nk_context, title.as_ptr(), flags, value) != 0 }
     }
 
     pub fn checkbox_flags_text(&mut self, title: &str, flags: &mut u32, value: u32) -> bool {
-        unsafe {
-            nk_checkbox_flags_text(&mut self.internal as *mut nk_context,
-                                   title.as_ptr() as *const i8,
-                                   title.as_bytes().len() as i32,
-                                   flags,
-                                   value) != 0
-        }
+        unsafe { nk_checkbox_flags_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, flags, value) != 0 }
     }
 
     pub fn radio_label(&mut self, title: String, active: &mut bool) -> bool {
         let mut i = if *active { 1 } else { 0 };
-        let r = unsafe {
-            nk_radio_label(&mut self.internal as *mut nk_context,
-                           title.as_ptr(),
-                           &mut i as *mut i32) != 0
-        };
+        let r = unsafe { nk_radio_label(&mut self.internal as *mut nk_context, title.as_ptr(), &mut i as *mut i32) != 0 };
 
         *active = i != 0;
         r
@@ -3926,112 +3734,50 @@ impl Context {
 
     pub fn radio_text(&mut self, title: &str, active: &mut bool) -> bool {
         let mut i = if *active { 1 } else { 0 };
-        let r = unsafe {
-            nk_radio_text(&mut self.internal as *mut nk_context,
-                          title.as_ptr() as *const i8,
-                          title.as_bytes().len() as i32,
-                          &mut i as *mut i32) != 0
-        };
+        let r = unsafe { nk_radio_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, &mut i as *mut i32) != 0 };
 
         *active = i != 0;
         r
     }
 
     pub fn option_label(&mut self, title: String, active: bool) -> bool {
-        unsafe {
-            nk_option_label(&mut self.internal as *mut nk_context,
-                            title.as_ptr(),
-                            if active { 1 } else { 0 }) > 0
-        }
+        unsafe { nk_option_label(&mut self.internal as *mut nk_context, title.as_ptr(), if active { 1 } else { 0 }) > 0 }
     }
 
     pub fn option_text(&mut self, title: &str, active: bool) -> bool {
-        unsafe {
-            nk_option_text(&mut self.internal as *mut nk_context,
-                           title.as_ptr() as *const i8,
-                           title.as_bytes().len() as i32,
-                           if active { 1 } else { 0 }) > 0
-        }
+        unsafe { nk_option_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, if active { 1 } else { 0 }) > 0 }
     }
 
     pub fn selectable_label(&mut self, title: String, align: Flags, value: &mut i32) -> bool {
-        unsafe {
-            nk_selectable_label(&mut self.internal as *mut nk_context,
-                                title.as_ptr(),
-                                align,
-                                value) != 0
-        }
+        unsafe { nk_selectable_label(&mut self.internal as *mut nk_context, title.as_ptr(), align, value) != 0 }
     }
 
     pub fn selectable_text(&mut self, title: &str, align: Flags, value: &mut i32) -> bool {
-        unsafe {
-            nk_selectable_text(&mut self.internal as *mut nk_context,
-                               title.as_ptr() as *const i8,
-                               title.as_bytes().len() as i32,
-                               align,
-                               value) != 0
-        }
+        unsafe { nk_selectable_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, align, value) != 0 }
     }
 
     pub fn selectable_image_label(&mut self, img: Image, title: String, align: Flags, value: &mut i32) -> bool {
-        unsafe {
-            nk_selectable_image_label(&mut self.internal as *mut nk_context,
-                                      img.internal,
-                                      title.as_ptr(),
-                                      align,
-                                      value) != 0
-        }
+        unsafe { nk_selectable_image_label(&mut self.internal as *mut nk_context, img.internal, title.as_ptr(), align, value) != 0 }
     }
 
     pub fn selectable_image_text(&mut self, img: Image, title: &str, align: Flags, value: &mut i32) -> bool {
-        unsafe {
-            nk_selectable_image_text(&mut self.internal as *mut nk_context,
-                                     img.internal,
-                                     title.as_ptr() as *const i8,
-                                     title.as_bytes().len() as i32,
-                                     align,
-                                     value) != 0
-        }
+        unsafe { nk_selectable_image_text(&mut self.internal as *mut nk_context, img.internal, title.as_ptr() as *const i8, title.as_bytes().len() as i32, align, value) != 0 }
     }
 
     pub fn select_label(&mut self, title: String, align: Flags, value: i32) -> i32 {
-        unsafe {
-            nk_select_label(&mut self.internal as *mut nk_context,
-                            title.as_ptr(),
-                            align,
-                            value)
-        }
+        unsafe { nk_select_label(&mut self.internal as *mut nk_context, title.as_ptr(), align, value) }
     }
 
     pub fn select_text(&mut self, title: &str, align: Flags, value: i32) -> i32 {
-        unsafe {
-            nk_select_text(&mut self.internal as *mut nk_context,
-                           title.as_ptr() as *const i8,
-                           title.as_bytes().len() as i32,
-                           align,
-                           value)
-        }
+        unsafe { nk_select_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.as_bytes().len() as i32, align, value) }
     }
 
     pub fn select_image_label(&mut self, img: Image, title: String, align: Flags, value: i32) -> i32 {
-        unsafe {
-            nk_select_image_label(&mut self.internal as *mut nk_context,
-                                  img.internal,
-                                  title.as_ptr(),
-                                  align,
-                                  value)
-        }
+        unsafe { nk_select_image_label(&mut self.internal as *mut nk_context, img.internal, title.as_ptr(), align, value) }
     }
 
     pub fn select_image_text(&mut self, img: Image, title: &str, align: Flags, value: i32) -> i32 {
-        unsafe {
-            nk_select_image_text(&mut self.internal as *mut nk_context,
-                                 img.internal,
-                                 title.as_ptr() as *const i8,
-                                 title.as_bytes().len() as i32,
-                                 align,
-                                 value)
-        }
+        unsafe { nk_select_image_text(&mut self.internal as *mut nk_context, img.internal, title.as_ptr() as *const i8, title.as_bytes().len() as i32, align, value) }
     }
 
     pub fn slide_float(&mut self, min: f32, val: f32, max: f32, step: f32) -> f32 {
@@ -4051,21 +3797,11 @@ impl Context {
     }
 
     pub fn progress(&mut self, cur: &mut usize, max: usize, is_modifyable: bool) -> bool {
-        unsafe {
-            nk_progress(&mut self.internal as *mut nk_context,
-                        cur,
-                        max,
-                        if is_modifyable { 1 } else { 0 }) != 0
-        }
+        unsafe { nk_progress(&mut self.internal as *mut nk_context, cur, max, if is_modifyable { 1 } else { 0 }) != 0 }
     }
 
     pub fn prog(&mut self, cur: usize, max: usize, is_modifyable: bool) -> usize {
-        unsafe {
-            nk_prog(&mut self.internal as *mut nk_context,
-                    cur,
-                    max,
-                    if is_modifyable { 1 } else { 0 })
-        }
+        unsafe { nk_prog(&mut self.internal as *mut nk_context, cur, max, if is_modifyable { 1 } else { 0 }) }
     }
 
     pub fn color_picker(&mut self, color: Color, fmt: ColorFormat) -> Color {
@@ -4074,116 +3810,49 @@ impl Context {
 
     pub fn color_pick(&mut self, fmt: ColorFormat) -> (bool, Color) {
         let mut c = Color::default();
-        let changed = unsafe {
-            nk_color_pick(&mut self.internal as *mut nk_context,
-                          &mut c as *mut nk_color,
-                          fmt)
-        };
+        let changed = unsafe { nk_color_pick(&mut self.internal as *mut nk_context, &mut c as *mut nk_color, fmt) };
         (changed != 0, c)
     }
 
     pub fn property_int(&mut self, name: String, min: i32, val: &mut i32, max: i32, step: i32, inc_per_pixel: f32) {
         unsafe {
-            nk_property_int(&mut self.internal as *mut nk_context,
-                            name.as_ptr(),
-                            min,
-                            val,
-                            max,
-                            step,
-                            inc_per_pixel);
+            nk_property_int(&mut self.internal as *mut nk_context, name.as_ptr(), min, val, max, step, inc_per_pixel);
         }
     }
 
     pub fn property_float(&mut self, name: String, min: f32, val: &mut f32, max: f32, step: f32, inc_per_pixel: f32) {
-        unsafe {
-            nk_property_float(&mut self.internal as *mut nk_context,
-                              name.as_ptr(),
-                              min,
-                              val,
-                              max,
-                              step,
-                              inc_per_pixel)
-        }
+        unsafe { nk_property_float(&mut self.internal as *mut nk_context, name.as_ptr(), min, val, max, step, inc_per_pixel) }
     }
 
     pub fn property_double(&mut self, name: String, min: f64, val: &mut f64, max: f64, step: f64, inc_per_pixel: f32) {
-        unsafe {
-            nk_property_double(&mut self.internal as *mut nk_context,
-                               name.as_ptr(),
-                               min,
-                               val,
-                               max,
-                               step,
-                               inc_per_pixel)
-        }
+        unsafe { nk_property_double(&mut self.internal as *mut nk_context, name.as_ptr(), min, val, max, step, inc_per_pixel) }
     }
 
     pub fn propertyi(&mut self, name: String, min: i32, val: i32, max: i32, step: i32, inc_per_pixel: f32) -> i32 {
-        unsafe {
-            nk_propertyi(&mut self.internal as *mut nk_context,
-                         name.as_ptr(),
-                         min,
-                         val,
-                         max,
-                         step,
-                         inc_per_pixel)
-        }
+        unsafe { nk_propertyi(&mut self.internal as *mut nk_context, name.as_ptr(), min, val, max, step, inc_per_pixel) }
     }
 
     pub fn propertyf(&mut self, name: String, min: f32, val: f32, max: f32, step: f32, inc_per_pixel: f32) -> f32 {
-        unsafe {
-            nk_propertyf(&mut self.internal as *mut nk_context,
-                         name.as_ptr(),
-                         min,
-                         val,
-                         max,
-                         step,
-                         inc_per_pixel)
-        }
+        unsafe { nk_propertyf(&mut self.internal as *mut nk_context, name.as_ptr(), min, val, max, step, inc_per_pixel) }
     }
 
     pub fn propertyd(&mut self, name: String, min: f64, val: f64, max: f64, step: f64, inc_per_pixel: f32) -> f64 {
-        unsafe {
-            nk_propertyd(&mut self.internal as *mut nk_context,
-                         name.as_ptr(),
-                         min,
-                         val,
-                         max,
-                         step,
-                         inc_per_pixel)
-        }
+        unsafe { nk_propertyd(&mut self.internal as *mut nk_context, name.as_ptr(), min, val, max, step, inc_per_pixel) }
     }
 
     pub fn edit_string_custom_filter(&mut self, flags: Flags, buffer: &mut [u8], len: &mut i32, filter: fn(&TextEdit, char) -> bool) -> Flags {
         unsafe {
             CUSTOM_EDIT_FILTER = Some(filter);
-            nk_edit_string(&mut self.internal as *mut nk_context,
-                           flags,
-                           &mut buffer[0] as *mut _ as *mut i8,
-                           len,
-                           buffer.len() as i32,
-                           Some(nk_filter_custom))
+            nk_edit_string(&mut self.internal as *mut nk_context, flags, &mut buffer[0] as *mut _ as *mut i8, len, buffer.len() as i32, Some(nk_filter_custom))
         }
     }
 
     pub fn edit_string(&mut self, flags: Flags, buffer: &mut [u8], len: &mut i32, filter: PluginFilter) -> Flags {
-        unsafe {
-            nk_edit_string(&mut self.internal as *mut nk_context,
-                           flags,
-                           &mut buffer[0] as *mut _ as *mut i8,
-                           len,
-                           buffer.len() as i32,
-                           filter)
-        }
+        unsafe { nk_edit_string(&mut self.internal as *mut nk_context, flags, &mut buffer[0] as *mut _ as *mut i8, len, buffer.len() as i32, filter) }
     }
 
     pub fn edit_buffer(&mut self, flags: Flags, editor: &mut TextEdit, filter: PluginFilter) -> Flags {
-        unsafe {
-            nk_edit_buffer(&mut self.internal as *mut nk_context,
-                           flags,
-                           &mut editor.internal,
-                           filter)
-        }
+        unsafe { nk_edit_buffer(&mut self.internal as *mut nk_context, flags, &mut editor.internal, filter) }
     }
 
     pub fn chart_begin(&mut self, ty: ChartType, num: i32, min: f32, max: f32) -> bool {
@@ -4191,36 +3860,18 @@ impl Context {
     }
 
     pub fn chart_begin_colored(&mut self, ty: ChartType, color: Color, active: Color, num: i32, min: f32, max: f32) -> bool {
-        unsafe {
-            nk_chart_begin_colored(&mut self.internal as *mut nk_context,
-                                   ty,
-                                   color,
-                                   active,
-                                   num,
-                                   min,
-                                   max) > 0
-        }
+        unsafe { nk_chart_begin_colored(&mut self.internal as *mut nk_context, ty, color, active, num, min, max) > 0 }
     }
 
     pub fn chart_add_slot(&mut self, ty: ChartType, count: i32, min_value: f32, max_value: f32) {
         unsafe {
-            nk_chart_add_slot(&mut self.internal as *mut nk_context,
-                              ty,
-                              count,
-                              min_value,
-                              max_value);
+            nk_chart_add_slot(&mut self.internal as *mut nk_context, ty, count, min_value, max_value);
         }
     }
 
     pub fn chart_add_slot_colored(&mut self, ty: ChartType, color: Color, active: Color, count: i32, min_value: f32, max_value: f32) {
         unsafe {
-            nk_chart_add_slot_colored(&mut self.internal as *mut nk_context,
-                                      ty,
-                                      color,
-                                      active,
-                                      count,
-                                      min_value,
-                                      max_value);
+            nk_chart_add_slot_colored(&mut self.internal as *mut nk_context, ty, color, active, count, min_value, max_value);
         }
     }
 
@@ -4240,11 +3891,7 @@ impl Context {
 
     pub fn plot(&mut self, ty: ChartType, values: &[f32]) {
         unsafe {
-            nk_plot(&mut self.internal as *mut nk_context,
-                    ty,
-                    values.as_ptr(),
-                    values.len() as i32,
-                    0);
+            nk_plot(&mut self.internal as *mut nk_context, ty, values.as_ptr(), values.len() as i32, 0);
         }
     }
 
@@ -4255,13 +3902,7 @@ impl Context {
     // }
 
     pub fn popup_begin(&mut self, ty: PopupType, title: String, flags: Flags, bounds: Rect) -> bool {
-        unsafe {
-            nk_popup_begin(&mut self.internal as *mut nk_context,
-                           ty,
-                           title.as_ptr(),
-                           flags,
-                           bounds) > 0
-        }
+        unsafe { nk_popup_begin(&mut self.internal as *mut nk_context, ty, title.as_ptr(), flags, bounds) > 0 }
     }
 
     pub fn popup_close(&mut self) {
@@ -4277,47 +3918,20 @@ impl Context {
     }
 
     pub fn combo(&mut self, items: &mut StringArray, selected: i32, item_height: i32, size: Vec2) -> i32 {
-        unsafe {
-            nk_combo(&mut self.internal as *mut nk_context,
-                     items.as_mut(),
-                     items.len() as i32,
-                     selected,
-                     item_height,
-                     size)
-        }
+        unsafe { nk_combo(&mut self.internal as *mut nk_context, items.as_mut(), items.len() as i32, selected, item_height, size) }
     }
 
     pub fn combo_separator(&mut self, items_separated_by_separator: String, separator: char, selected: i32, item_height: i32, size: Vec2) -> i32 {
-        let len = ::std::string::String::from_utf8_lossy(items_separated_by_separator.bytes.as_ref())
-            .as_ref()
-            .split(separator)
-            .count();
-        unsafe {
-            nk_combo_separator(&mut self.internal as *mut nk_context,
-                               items_separated_by_separator.as_ptr(),
-                               separator as i32,
-                               selected,
-                               len as i32,
-                               item_height,
-                               size)
-        }
+        let len = ::std::string::String::from_utf8_lossy(items_separated_by_separator.bytes.as_ref()).as_ref().split(separator).count();
+        unsafe { nk_combo_separator(&mut self.internal as *mut nk_context, items_separated_by_separator.as_ptr(), separator as i32, selected, len as i32, item_height, size) }
     }
 
     pub fn combo_begin_label(&mut self, selected: String, size: Vec2) -> bool {
-        unsafe {
-            nk_combo_begin_label(&mut self.internal as *mut nk_context,
-                                 selected.as_ptr(),
-                                 size) > 0
-        }
+        unsafe { nk_combo_begin_label(&mut self.internal as *mut nk_context, selected.as_ptr(), size) > 0 }
     }
 
     pub fn combo_begin_text(&mut self, selected: &str, size: Vec2) -> bool {
-        unsafe {
-            nk_combo_begin_text(&mut self.internal as *mut nk_context,
-                                selected.as_ptr() as *const i8,
-                                selected.as_bytes().len() as i32,
-                                size) > 0
-        }
+        unsafe { nk_combo_begin_text(&mut self.internal as *mut nk_context, selected.as_ptr() as *const i8, selected.as_bytes().len() as i32, size) > 0 }
     }
 
     pub fn combo_begin_color(&mut self, color: Color, size: Vec2) -> bool {
@@ -4329,22 +3943,11 @@ impl Context {
     }
 
     pub fn combo_begin_symbol_label(&mut self, label: String, sym: SymbolType, size: Vec2) -> bool {
-        unsafe {
-            nk_combo_begin_symbol_label(&mut self.internal as *mut nk_context,
-                                        label.as_ptr(),
-                                        sym,
-                                        size) > 0
-        }
+        unsafe { nk_combo_begin_symbol_label(&mut self.internal as *mut nk_context, label.as_ptr(), sym, size) > 0 }
     }
 
     pub fn combo_begin_symbol_text(&mut self, label: &str, sym: SymbolType, size: Vec2) -> bool {
-        unsafe {
-            nk_combo_begin_symbol_text(&mut self.internal as *mut nk_context,
-                                       label.as_ptr() as *const i8,
-                                       label.as_bytes().len() as i32,
-                                       sym,
-                                       size) > 0
-        }
+        unsafe { nk_combo_begin_symbol_text(&mut self.internal as *mut nk_context, label.as_ptr() as *const i8, label.as_bytes().len() as i32, sym, size) > 0 }
     }
 
     pub fn combo_begin_image(&mut self, img: Image, size: Vec2) -> bool {
@@ -4352,77 +3955,35 @@ impl Context {
     }
 
     pub fn combo_begin_image_label(&mut self, label: String, img: Image, size: Vec2) -> bool {
-        unsafe {
-            nk_combo_begin_image_label(&mut self.internal as *mut nk_context,
-                                       label.as_ptr(),
-                                       img.internal,
-                                       size) > 0
-        }
+        unsafe { nk_combo_begin_image_label(&mut self.internal as *mut nk_context, label.as_ptr(), img.internal, size) > 0 }
     }
 
     pub fn combo_begin_image_text(&mut self, label: &str, img: Image, size: Vec2) -> bool {
-        unsafe {
-            nk_combo_begin_image_text(&mut self.internal as *mut nk_context,
-                                      label.as_ptr() as *const i8,
-                                      label.as_bytes().len() as i32,
-                                      img.internal,
-                                      size) > 0
-        }
+        unsafe { nk_combo_begin_image_text(&mut self.internal as *mut nk_context, label.as_ptr() as *const i8, label.as_bytes().len() as i32, img.internal, size) > 0 }
     }
 
     pub fn combo_item_label(&mut self, label: String, alignment: Flags) -> bool {
-        unsafe {
-            nk_combo_item_label(&mut self.internal as *mut nk_context,
-                                label.as_ptr(),
-                                alignment) > 0
-        }
+        unsafe { nk_combo_item_label(&mut self.internal as *mut nk_context, label.as_ptr(), alignment) > 0 }
     }
 
     pub fn combo_item_text(&mut self, label: &str, alignment: Flags) -> bool {
-        unsafe {
-            nk_combo_item_text(&mut self.internal as *mut nk_context,
-                               label.as_ptr() as *const i8,
-                               label.as_bytes().len() as i32,
-                               alignment) > 0
-        }
+        unsafe { nk_combo_item_text(&mut self.internal as *mut nk_context, label.as_ptr() as *const i8, label.as_bytes().len() as i32, alignment) > 0 }
     }
 
     pub fn combo_item_image_label(&mut self, img: Image, label: String, alignment: Flags) -> bool {
-        unsafe {
-            nk_combo_item_image_label(&mut self.internal as *mut nk_context,
-                                      img.internal,
-                                      label.as_ptr(),
-                                      alignment) > 0
-        }
+        unsafe { nk_combo_item_image_label(&mut self.internal as *mut nk_context, img.internal, label.as_ptr(), alignment) > 0 }
     }
 
     pub fn combo_item_image_text(&mut self, img: Image, label: &str, alignment: Flags) -> bool {
-        unsafe {
-            nk_combo_item_image_text(&mut self.internal as *mut nk_context,
-                                     img.internal,
-                                     label.as_ptr() as *const i8,
-                                     label.as_bytes().len() as i32,
-                                     alignment) > 0
-        }
+        unsafe { nk_combo_item_image_text(&mut self.internal as *mut nk_context, img.internal, label.as_ptr() as *const i8, label.as_bytes().len() as i32, alignment) > 0 }
     }
 
     pub fn combo_item_symbol_label(&mut self, sym: SymbolType, label: String, alignment: Flags) -> bool {
-        unsafe {
-            nk_combo_item_symbol_label(&mut self.internal as *mut nk_context,
-                                       sym,
-                                       label.as_ptr(),
-                                       alignment) > 0
-        }
+        unsafe { nk_combo_item_symbol_label(&mut self.internal as *mut nk_context, sym, label.as_ptr(), alignment) > 0 }
     }
 
     pub fn combo_item_symbol_text(&mut self, sym: SymbolType, label: &str, alignment: Flags) -> bool {
-        unsafe {
-            nk_combo_item_symbol_text(&mut self.internal as *mut nk_context,
-                                      sym,
-                                      label.as_ptr() as *const i8,
-                                      label.as_bytes().len() as i32,
-                                      alignment) > 0
-        }
+        unsafe { nk_combo_item_symbol_text(&mut self.internal as *mut nk_context, sym, label.as_ptr() as *const i8, label.as_bytes().len() as i32, alignment) > 0 }
     }
 
     pub fn combo_close(&mut self) {
@@ -4438,12 +3999,7 @@ impl Context {
     }
 
     pub fn contextual_begin(&mut self, flags: Flags, bounds: Vec2, trigger_bounds: Rect) -> bool {
-        unsafe {
-            nk_contextual_begin(&mut self.internal as *mut nk_context,
-                                flags,
-                                bounds,
-                                trigger_bounds) > 0
-        }
+        unsafe { nk_contextual_begin(&mut self.internal as *mut nk_context, flags, bounds, trigger_bounds) > 0 }
     }
 
     pub fn contextual_item_label(&mut self, label: String, align: Flags) -> bool {
@@ -4451,50 +4007,23 @@ impl Context {
     }
 
     pub fn contextual_item_text(&mut self, label: &str, align: Flags) -> bool {
-        unsafe {
-            nk_contextual_item_text(&mut self.internal as *mut nk_context,
-                                    label.as_ptr() as *const i8,
-                                    label.as_bytes().len() as i32,
-                                    align) > 0
-        }
+        unsafe { nk_contextual_item_text(&mut self.internal as *mut nk_context, label.as_ptr() as *const i8, label.as_bytes().len() as i32, align) > 0 }
     }
 
     pub fn contextual_item_image_label(&mut self, img: Image, label: String, align: Flags) -> bool {
-        unsafe {
-            nk_contextual_item_image_label(&mut self.internal as *mut nk_context,
-                                           img.internal,
-                                           label.as_ptr(),
-                                           align) > 0
-        }
+        unsafe { nk_contextual_item_image_label(&mut self.internal as *mut nk_context, img.internal, label.as_ptr(), align) > 0 }
     }
 
     pub fn contextual_item_image_text(&mut self, img: Image, label: &str, align: Flags) -> bool {
-        unsafe {
-            nk_contextual_item_image_text(&mut self.internal as *mut nk_context,
-                                          img.internal,
-                                          label.as_ptr() as *const i8,
-                                          label.as_bytes().len() as i32,
-                                          align) > 0
-        }
+        unsafe { nk_contextual_item_image_text(&mut self.internal as *mut nk_context, img.internal, label.as_ptr() as *const i8, label.as_bytes().len() as i32, align) > 0 }
     }
 
     pub fn contextual_item_symbol_label(&mut self, sym: SymbolType, label: String, align: Flags) -> bool {
-        unsafe {
-            nk_contextual_item_symbol_label(&mut self.internal as *mut nk_context,
-                                            sym,
-                                            label.as_ptr(),
-                                            align) > 0
-        }
+        unsafe { nk_contextual_item_symbol_label(&mut self.internal as *mut nk_context, sym, label.as_ptr(), align) > 0 }
     }
 
     pub fn contextual_item_symbol_text(&mut self, sym: SymbolType, label: &str, align: Flags) -> bool {
-        unsafe {
-            nk_contextual_item_symbol_text(&mut self.internal as *mut nk_context,
-                                           sym,
-                                           label.as_ptr() as *const i8,
-                                           label.as_bytes().len() as i32,
-                                           align) > 0
-        }
+        unsafe { nk_contextual_item_symbol_text(&mut self.internal as *mut nk_context, sym, label.as_ptr() as *const i8, label.as_bytes().len() as i32, align) > 0 }
     }
 
     pub fn contextual_close(&mut self) {
@@ -4538,82 +4067,35 @@ impl Context {
     }
 
     pub fn menu_begin_label(&mut self, title: String, align: Flags, size: Vec2) -> bool {
-        unsafe {
-            nk_menu_begin_label(&mut self.internal as *mut nk_context,
-                                title.as_ptr(),
-                                align,
-                                size) > 0
-        }
+        unsafe { nk_menu_begin_label(&mut self.internal as *mut nk_context, title.as_ptr(), align, size) > 0 }
     }
 
     pub fn menu_begin_text(&mut self, title: &str, align: Flags, size: Vec2) -> bool {
-        unsafe {
-            nk_menu_begin_text(&mut self.internal as *mut nk_context,
-                               title.as_ptr() as *const i8,
-                               title.len() as i32,
-                               align,
-                               size) > 0
-        }
+        unsafe { nk_menu_begin_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.len() as i32, align, size) > 0 }
     }
 
     pub fn menu_begin_image(&mut self, title: String, img: Image, size: Vec2) -> bool {
-        unsafe {
-            nk_menu_begin_image(&mut self.internal as *mut nk_context,
-                                title.as_ptr(),
-                                img.internal,
-                                size) > 0
-        }
+        unsafe { nk_menu_begin_image(&mut self.internal as *mut nk_context, title.as_ptr(), img.internal, size) > 0 }
     }
 
     pub fn menu_begin_image_label(&mut self, title: String, align: Flags, img: Image, size: Vec2) -> bool {
-        unsafe {
-            nk_menu_begin_image_label(&mut self.internal as *mut nk_context,
-                                      title.as_ptr(),
-                                      align,
-                                      img.internal,
-                                      size) > 0
-        }
+        unsafe { nk_menu_begin_image_label(&mut self.internal as *mut nk_context, title.as_ptr(), align, img.internal, size) > 0 }
     }
 
     pub fn menu_begin_image_text(&mut self, title: &str, align: Flags, img: Image, size: Vec2) -> bool {
-        unsafe {
-            nk_menu_begin_image_text(&mut self.internal as *mut nk_context,
-                                     title.as_ptr() as *const i8,
-                                     title.len() as i32,
-                                     align,
-                                     img.internal,
-                                     size) > 0
-        }
+        unsafe { nk_menu_begin_image_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.len() as i32, align, img.internal, size) > 0 }
     }
 
     pub fn menu_begin_symbol(&mut self, title: String, sym: SymbolType, size: Vec2) -> bool {
-        unsafe {
-            nk_menu_begin_symbol(&mut self.internal as *mut nk_context,
-                                 title.as_ptr(),
-                                 sym,
-                                 size) > 0
-        }
+        unsafe { nk_menu_begin_symbol(&mut self.internal as *mut nk_context, title.as_ptr(), sym, size) > 0 }
     }
 
     pub fn menu_begin_symbol_label(&mut self, title: String, align: Flags, sym: SymbolType, size: Vec2) -> bool {
-        unsafe {
-            nk_menu_begin_symbol_label(&mut self.internal as *mut nk_context,
-                                       title.as_ptr(),
-                                       align,
-                                       sym,
-                                       size) > 0
-        }
+        unsafe { nk_menu_begin_symbol_label(&mut self.internal as *mut nk_context, title.as_ptr(), align, sym, size) > 0 }
     }
 
     pub fn menu_begin_symbol_text(&mut self, title: &str, align: Flags, sym: SymbolType, size: Vec2) -> bool {
-        unsafe {
-            nk_menu_begin_symbol_text(&mut self.internal as *mut nk_context,
-                                      title.as_ptr() as *const i8,
-                                      title.len() as i32,
-                                      align,
-                                      sym,
-                                      size) > 0
-        }
+        unsafe { nk_menu_begin_symbol_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.len() as i32, align, sym, size) > 0 }
     }
 
     pub fn menu_item_label(&mut self, title: String, align: Flags) -> bool {
@@ -4621,50 +4103,23 @@ impl Context {
     }
 
     pub fn menu_item_text(&mut self, title: &str, align: Flags) -> bool {
-        unsafe {
-            nk_menu_item_text(&mut self.internal as *mut nk_context,
-                              title.as_ptr() as *const i8,
-                              title.len() as i32,
-                              align) > 0
-        }
+        unsafe { nk_menu_item_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.len() as i32, align) > 0 }
     }
 
     pub fn menu_item_image_label(&mut self, img: Image, title: String, align: Flags) -> bool {
-        unsafe {
-            nk_menu_item_image_label(&mut self.internal as *mut nk_context,
-                                     img.internal,
-                                     title.as_ptr(),
-                                     align) > 0
-        }
+        unsafe { nk_menu_item_image_label(&mut self.internal as *mut nk_context, img.internal, title.as_ptr(), align) > 0 }
     }
 
     pub fn menu_item_image_text(&mut self, img: Image, title: &str, align: Flags) -> bool {
-        unsafe {
-            nk_menu_item_image_text(&mut self.internal as *mut nk_context,
-                                    img.internal,
-                                    title.as_ptr() as *const i8,
-                                    title.len() as i32,
-                                    align) > 0
-        }
+        unsafe { nk_menu_item_image_text(&mut self.internal as *mut nk_context, img.internal, title.as_ptr() as *const i8, title.len() as i32, align) > 0 }
     }
 
     pub fn menu_item_symbol_label(&mut self, sym: SymbolType, title: String, align: Flags) -> bool {
-        unsafe {
-            nk_menu_item_symbol_label(&mut self.internal as *mut nk_context,
-                                      sym,
-                                      title.as_ptr(),
-                                      align) > 0
-        }
+        unsafe { nk_menu_item_symbol_label(&mut self.internal as *mut nk_context, sym, title.as_ptr(), align) > 0 }
     }
 
     pub fn menu_item_symbol_text(&mut self, sym: SymbolType, title: &str, align: Flags) -> bool {
-        unsafe {
-            nk_menu_item_symbol_text(&mut self.internal as *mut nk_context,
-                                     sym,
-                                     title.as_ptr() as *const i8,
-                                     title.len() as i32,
-                                     align) > 0
-        }
+        unsafe { nk_menu_item_symbol_text(&mut self.internal as *mut nk_context, sym, title.as_ptr() as *const i8, title.len() as i32, align) > 0 }
     }
 
     pub fn menu_close(&mut self) {
@@ -4681,11 +4136,13 @@ impl Context {
 
     pub fn convert(&mut self, cmds: &mut Buffer, vertices: &mut Buffer, elements: &mut Buffer, config: &ConvertConfig) {
         unsafe {
-            nk_convert(&mut self.internal as *mut nk_context,
-                       &mut cmds.internal as *mut nk_buffer,
-                       &mut vertices.internal as *mut nk_buffer,
-                       &mut elements.internal as *mut nk_buffer,
-                       &config.internal as *const nk_convert_config);
+            nk_convert(
+                &mut self.internal as *mut nk_context,
+                &mut cmds.internal as *mut nk_buffer,
+                &mut vertices.internal as *mut nk_buffer,
+                &mut elements.internal as *mut nk_buffer,
+                &config.internal as *const nk_convert_config,
+            );
         }
     }
 
@@ -4703,19 +4160,13 @@ impl Context {
 
     pub fn input_key(&mut self, key: Key, down: bool) {
         unsafe {
-            nk_input_key(&mut self.internal as *mut nk_context,
-                         key,
-                         if down { 1 } else { 0 });
+            nk_input_key(&mut self.internal as *mut nk_context, key, if down { 1 } else { 0 });
         }
     }
 
     pub fn input_button(&mut self, b: Button, x: i32, y: i32, down: bool) {
         unsafe {
-            nk_input_button(&mut self.internal as *mut nk_context,
-                            b,
-                            x,
-                            y,
-                            if down { 1 } else { 0 });
+            nk_input_button(&mut self.internal as *mut nk_context, b, x, y, if down { 1 } else { 0 });
         }
     }
 
@@ -4733,8 +4184,7 @@ impl Context {
 
     pub fn input_glyph(&mut self, g: Glyph) {
         unsafe {
-            nk_input_glyph(&mut self.internal as *mut nk_context,
-                           &g[0] as *const _ as *mut i8);
+            nk_input_glyph(&mut self.internal as *mut nk_context, &g[0] as *const _ as *mut i8);
         }
     }
 
@@ -4758,8 +4208,7 @@ impl Context {
 
     pub fn style_from_table(&mut self, table: &ColorMap) {
         unsafe {
-            nk_style_from_table(&mut self.internal as *mut nk_context,
-                                &table.internal[0] as *const nk_color);
+            nk_style_from_table(&mut self.internal as *mut nk_context, &table.internal[0] as *const nk_color);
         }
     }
 
@@ -4771,8 +4220,7 @@ impl Context {
 
     pub fn style_load_all_cursors(&mut self, table: &mut CursorMap) {
         unsafe {
-            nk_style_load_all_cursors(&mut self.internal as *mut nk_context,
-                                      table.internal.as_mut_ptr() as *mut nk_cursor);
+            nk_style_load_all_cursors(&mut self.internal as *mut nk_context, table.internal.as_mut_ptr() as *mut nk_cursor);
         }
     }
 
@@ -4807,35 +4255,19 @@ impl Context {
     }
 
     pub fn style_push_vec2(&mut self, addr: &mut Vec2, val: Vec2) -> bool {
-        unsafe {
-            nk_style_push_vec2(&mut self.internal as *mut nk_context,
-                               addr as *mut nk_vec2,
-                               val) > 0
-        }
+        unsafe { nk_style_push_vec2(&mut self.internal as *mut nk_context, addr as *mut nk_vec2, val) > 0 }
     }
 
     pub fn style_push_style_item(&mut self, addr: &mut StyleItem, val: StyleItem) -> bool {
-        unsafe {
-            nk_style_push_style_item(&mut self.internal as *mut nk_context,
-                                     &mut addr.internal as *mut nk_style_item,
-                                     val.internal) > 0
-        }
+        unsafe { nk_style_push_style_item(&mut self.internal as *mut nk_context, &mut addr.internal as *mut nk_style_item, val.internal) > 0 }
     }
 
     pub fn style_push_flags(&mut self, addr: &mut Flags, val: Flags) -> bool {
-        unsafe {
-            nk_style_push_flags(&mut self.internal as *mut nk_context,
-                                addr as *mut nk_flags,
-                                val) > 0
-        }
+        unsafe { nk_style_push_flags(&mut self.internal as *mut nk_context, addr as *mut nk_flags, val) > 0 }
     }
 
     pub fn style_push_color(&mut self, addr: &mut Color, val: Color) -> bool {
-        unsafe {
-            nk_style_push_color(&mut self.internal as *mut nk_context,
-                                addr as *mut nk_color,
-                                val) > 0
-        }
+        unsafe { nk_style_push_color(&mut self.internal as *mut nk_context, addr as *mut nk_color, val) > 0 }
     }
 
     pub fn style_pop_font(&mut self) -> bool {
@@ -4890,11 +4322,7 @@ impl Context {
     }
 
     pub fn widget_has_mouse_click_down(&mut self, b: Button, down: bool) -> bool {
-        unsafe {
-            nk_widget_has_mouse_click_down(&mut self.internal as *mut nk_context,
-                                           b,
-                                           if down { 1 } else { 0 }) > 0
-        }
+        unsafe { nk_widget_has_mouse_click_down(&mut self.internal as *mut nk_context, b, if down { 1 } else { 0 }) > 0 }
     }
 
     pub fn widget(&self, arg1: &mut Rect) -> WidgetLayoutState {
@@ -4931,10 +4359,7 @@ impl Context {
     }
 
     pub fn next_cmd<'a, 'b>(&self, arg2: &'b Command) -> Option<&'a Command> {
-        let r = unsafe {
-            nk__next(&self.internal as *const _ as *mut nk_context,
-                     &arg2.internal)
-        };
+        let r = unsafe { nk__next(&self.internal as *const _ as *mut nk_context, &arg2.internal) };
         unsafe {
             if r.is_null() {
                 None
@@ -4956,10 +4381,7 @@ impl Context {
     }
 
     pub fn draw_command_iterator<'a>(&'a mut self, buf: &'a Buffer) -> DrawCommandIterator<'a> {
-        DrawCommandIterator {
-            ctx: self,
-            buf: buf,
-        }
+        DrawCommandIterator { ctx: self, buf: buf }
     }
 
     pub fn command_iterator<'a>(&'a mut self) -> CommandIterator<'a> {
@@ -4979,10 +4401,7 @@ impl<'a> IntoIterator for CommandIterator<'a> {
 
     fn into_iter(self) -> Self::IntoIter {
         let cmd = self.ctx.begin_cmd();
-        CommandIntoIter {
-            ctx: self.ctx,
-            cmd: cmd,
-        }
+        CommandIntoIter { ctx: self.ctx, cmd: cmd }
     }
 }
 
@@ -4996,11 +4415,7 @@ impl<'a> Iterator for CommandIntoIter<'a> {
     fn next(&mut self) -> Option<&'a Command> {
         let r = self.cmd.clone();
 
-        self.cmd = if let Some(p) = self.cmd {
-            self.ctx.next_cmd(p)
-        } else {
-            None
-        };
+        self.cmd = if let Some(p) = self.cmd { self.ctx.next_cmd(p) } else { None };
 
         r
     }
@@ -5019,11 +4434,7 @@ impl<'a> IntoIterator for DrawCommandIterator<'a> {
 
     fn into_iter(self) -> Self::IntoIter {
         let cmd = self.ctx.draw_begin(self.buf);
-        DrawCommandIntoIter {
-            ctx: self.ctx,
-            buf: self.buf,
-            cmd: cmd,
-        }
+        DrawCommandIntoIter { ctx: self.ctx, buf: self.buf, cmd: cmd }
     }
 }
 
@@ -5038,11 +4449,7 @@ impl<'a> Iterator for DrawCommandIntoIter<'a> {
     fn next(&mut self) -> Option<&'a DrawCommand> {
         let r = self.cmd.clone();
 
-        self.cmd = if let Some(ref p) = self.cmd {
-            self.ctx.draw_next(p, self.buf)
-        } else {
-            None
-        };
+        self.cmd = if let Some(ref p) = self.cmd { self.ctx.draw_next(p, self.buf) } else { None };
 
         r
     }
@@ -5084,60 +4491,40 @@ impl Window {
         self.internal.scrollbar_hiding_timer
     }
     pub fn buffer(&self) -> &CommandBuffer {
-        unsafe {
-            ::std::mem::transmute(&self.internal.buffer)
-        }
+        unsafe { ::std::mem::transmute(&self.internal.buffer) }
     }
     pub fn layout(&self) -> &Panel {
-        unsafe {
-            ::std::mem::transmute(self.internal.layout)
-        }
+        unsafe { ::std::mem::transmute(self.internal.layout) }
     }
     pub fn layout_mut(&mut self) -> &mut Panel {
-        unsafe {
-            ::std::mem::transmute(self.internal.layout)
-        }
+        unsafe { ::std::mem::transmute(self.internal.layout) }
     }
     pub fn property(&self) -> &PropertyState {
-        unsafe {
-            ::std::mem::transmute(&self.internal.property)
-        }
+        unsafe { ::std::mem::transmute(&self.internal.property) }
     }
     pub fn popup(&self) -> &PopupState {
-        unsafe {
-            ::std::mem::transmute(&self.internal.popup)
-        }
+        unsafe { ::std::mem::transmute(&self.internal.popup) }
     }
     pub fn edit(&self) -> &EditState {
-        unsafe {
-            ::std::mem::transmute(&self.internal.edit)
-        }
+        unsafe { ::std::mem::transmute(&self.internal.edit) }
     }
     pub fn scrolled(&self) -> u32 {
         self.internal.scrolled
     }
     pub fn tables(&self) -> &[Table] {
-        unsafe {
-            ::std::slice::from_raw_parts(self.internal.tables as *mut _ as *const Table, self.internal.table_count as usize)
-        }
+        unsafe { ::std::slice::from_raw_parts(self.internal.tables as *mut _ as *const Table, self.internal.table_count as usize) }
     }
     pub fn table_size(&self) -> u16 {
         self.internal.table_size
     }
     pub fn prev(&self) -> &Window {
-        unsafe {
-            ::std::mem::transmute(self.internal.prev)
-        }
+        unsafe { ::std::mem::transmute(self.internal.prev) }
     }
     pub fn next(&self) -> &Window {
-        unsafe {
-            ::std::mem::transmute(self.internal.next)
-        }
+        unsafe { ::std::mem::transmute(self.internal.next) }
     }
     pub fn parent(&self) -> &Window {
-        unsafe {
-            ::std::mem::transmute(self.internal.parent)
-        }
+        unsafe { ::std::mem::transmute(self.internal.parent) }
     }
 
     pub fn set_flags(&mut self, flags: Flags) {
@@ -5448,21 +4835,21 @@ impl Chart {
 // =============================================================================================
 
 macro_rules! emit_nk_command {
-    ($rs_ty: ident, $nat_ty: ty) => {
+    ($rs_ty:ident, $nat_ty:ty) => {
         wrapper_type!($rs_ty, $nat_ty);
-        
+
         impl AsRef<$rs_ty> for Command {
             fn as_ref(&self) -> &$rs_ty {
                 unsafe { ::std::mem::transmute(&self.internal) }
             }
         }
-        
+
         impl $rs_ty {
             pub fn header(&self) -> &Command {
                 unsafe { ::std::mem::transmute(&self.internal.header) }
             }
-        }        
-    }
+        }
+    };
 }
 
 wrapper_type!(Command, nk_command);
@@ -5722,10 +5109,7 @@ impl CommandPolygon {
         self.internal.line_thickness
     }
     pub fn points(&self) -> &[Vec2i] {
-        unsafe {
-            ::std::slice::from_raw_parts(self.internal.points.as_ptr(),
-                                         self.internal.point_count as usize)
-        }
+        unsafe { ::std::slice::from_raw_parts(self.internal.points.as_ptr(), self.internal.point_count as usize) }
     }
     pub fn color(&self) -> Color {
         self.internal.color
@@ -5735,10 +5119,7 @@ impl CommandPolygon {
 emit_nk_command!(CommandPolygonFilled, nk_command_polygon_filled);
 impl CommandPolygonFilled {
     pub fn points(&self) -> &[Vec2i] {
-        unsafe {
-            ::std::slice::from_raw_parts(self.internal.points.as_ptr(),
-                                         self.internal.point_count as usize)
-        }
+        unsafe { ::std::slice::from_raw_parts(self.internal.points.as_ptr(), self.internal.point_count as usize) }
     }
     pub fn color(&self) -> Color {
         self.internal.color
@@ -5751,10 +5132,7 @@ impl CommandPolyline {
         self.internal.line_thickness
     }
     pub fn points(&self) -> &[Vec2i] {
-        unsafe {
-            ::std::slice::from_raw_parts(self.internal.points.as_ptr(),
-                                         self.internal.point_count as usize)
-        }
+        unsafe { ::std::slice::from_raw_parts(self.internal.points.as_ptr(), self.internal.point_count as usize) }
     }
     pub fn color(&self) -> Color {
         self.internal.color
@@ -5801,10 +5179,7 @@ impl CommandText {
         self.internal.height
     }
     pub fn chars(&self) -> &[u8] {
-        unsafe {
-            ::std::slice::from_raw_parts(self.internal.string.as_ptr() as *const u8,
-                                         self.internal.length as usize)
-        }
+        unsafe { ::std::slice::from_raw_parts(self.internal.string.as_ptr() as *const u8, self.internal.length as usize) }
     }
     pub fn background(&self) -> Color {
         self.internal.background
@@ -5830,17 +5205,7 @@ impl CommandBuffer {
 
     pub fn stroke_curve(&mut self, x0: f32, y0: f32, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32, line_thickness: f32, color: Color) {
         unsafe {
-            nk_stroke_curve(&mut self.internal,
-                            x0,
-                            y0,
-                            x1,
-                            y1,
-                            x2,
-                            y2,
-                            x3,
-                            y3,
-                            line_thickness,
-                            color);
+            nk_stroke_curve(&mut self.internal, x0, y0, x1, y1, x2, y2, x3, y3, line_thickness, color);
         }
     }
 
@@ -5858,48 +5223,25 @@ impl CommandBuffer {
 
     pub fn stroke_arc(&mut self, cx: f32, cy: f32, radius: f32, a_min: f32, a_max: f32, line_thickness: f32, color: Color) {
         unsafe {
-            nk_stroke_arc(&mut self.internal,
-                          cx,
-                          cy,
-                          radius,
-                          a_min,
-                          a_max,
-                          line_thickness,
-                          color);
+            nk_stroke_arc(&mut self.internal, cx, cy, radius, a_min, a_max, line_thickness, color);
         }
     }
 
     pub fn stroke_triangle(&mut self, x0: f32, y0: f32, x1: f32, y1: f32, x2: f32, y2: f32, line_thichness: f32, color: Color) {
         unsafe {
-            nk_stroke_triangle(&mut self.internal,
-                               x0,
-                               y0,
-                               x1,
-                               y1,
-                               x2,
-                               y2,
-                               line_thichness,
-                               color);
+            nk_stroke_triangle(&mut self.internal, x0, y0, x1, y1, x2, y2, line_thichness, color);
         }
     }
 
     pub fn stroke_polyline(&mut self, points: &mut [f32], line_thickness: f32, color: Color) {
         unsafe {
-            nk_stroke_polyline(&mut self.internal,
-                               &mut points[0] as *mut f32,
-                               points.len() as ::std::os::raw::c_int,
-                               line_thickness,
-                               color);
+            nk_stroke_polyline(&mut self.internal, &mut points[0] as *mut f32, points.len() as ::std::os::raw::c_int, line_thickness, color);
         }
     }
 
     pub fn stroke_polygon(&mut self, points: &mut [f32], line_thickness: f32, color: Color) {
         unsafe {
-            nk_stroke_polygon(&mut self.internal,
-                              &mut points[0] as *mut f32,
-                              points.len() as ::std::os::raw::c_int,
-                              line_thickness,
-                              color);
+            nk_stroke_polygon(&mut self.internal, &mut points[0] as *mut f32, points.len() as ::std::os::raw::c_int, line_thickness, color);
         }
     }
 
@@ -5935,10 +5277,7 @@ impl CommandBuffer {
 
     pub fn fill_polygon(&mut self, points: &mut [f32], color: Color) {
         unsafe {
-            nk_fill_polygon(&mut self.internal,
-                            &mut points[0] as *mut f32,
-                            points.len() as ::std::os::raw::c_int,
-                            color);
+            nk_fill_polygon(&mut self.internal, &mut points[0] as *mut f32, points.len() as ::std::os::raw::c_int, color);
         }
     }
 
@@ -5950,22 +5289,13 @@ impl CommandBuffer {
 
     pub fn draw_image(&mut self, arg2: Rect, arg3: &Image, arg4: Color) {
         unsafe {
-            nk_draw_image(&mut self.internal,
-                          arg2,
-                          &arg3.internal as *const nk_image,
-                          arg4);
+            nk_draw_image(&mut self.internal, arg2, &arg3.internal as *const nk_image, arg4);
         }
     }
 
     pub fn draw_text(&mut self, arg2: Rect, text: &str, arg3: &UserFont, arg4: Color, arg5: Color) {
         unsafe {
-            nk_draw_text(&mut self.internal,
-                         arg2,
-                         text.as_ptr() as *const i8,
-                         text.as_bytes().len() as ::std::os::raw::c_int,
-                         &arg3.internal,
-                         arg4,
-                         arg5);
+            nk_draw_text(&mut self.internal, arg2, text.as_ptr() as *const i8, text.as_bytes().len() as ::std::os::raw::c_int, &arg3.internal, arg4, arg5);
         }
     }
 }
@@ -6003,7 +5333,6 @@ pub fn color_rgba(r: i32, g: i32, b: i32, a: i32) -> Color {
 pub fn color_rgba_u32(rgba: u32) -> Color {
     unsafe { nk_rgba_u32(rgba) }
 }
-
 
 pub fn color_rgba_iv(rgba: &i32) -> Color {
     unsafe { nk_rgba_iv(rgba as *const i32) }

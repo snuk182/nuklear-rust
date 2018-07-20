@@ -1,7 +1,7 @@
-use nuklear_sys::{nk_size, nk_handle};
+use nuklear_sys::{nk_handle, nk_size};
 
-use std::os::raw::c_void;
 use std::mem;
+use std::os::raw::c_void;
 
 pub unsafe extern "C" fn alloc(_: nk_handle, _: *mut c_void, size: nk_size) -> *mut c_void {
     trace!("allocating {} bytes", size);
