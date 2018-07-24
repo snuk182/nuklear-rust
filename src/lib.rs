@@ -1,3 +1,10 @@
+#![cfg_attr(feature = "cargo-clippy", allow(transmute_ptr_to_ptr))] // TODO later
+#![cfg_attr(feature = "cargo-clippy", allow(transmute_ptr_to_ref))] // TODO later
+#![cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))] // API requirement
+#![cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))] // API requirement
+#![cfg_attr(feature = "cargo-clippy", allow(trivially_copy_pass_by_ref))] // API requirement
+#![cfg_attr(feature = "cargo-clippy", allow(cast_ptr_alignment))] // required by allocator
+
 #![cfg_attr(feature = "rust_allocator", feature(allocator_api, alloc, heap_api))]
 
 #[macro_use]
@@ -85,12 +92,12 @@ macro_rules! wrapper_impls {
         }
         impl AsRef<$name> for $typ {
             fn as_ref(&self) -> &$name {
-                unsafe { ::std::mem::transmute(self) }
+                unsafe { &*(self as *const $typ as *const $name) }
             }
         }
         impl AsMut<$name> for $typ {
             fn as_mut(&mut self) -> &mut $name {
-                unsafe { ::std::mem::transmute(self) }
+                unsafe { &mut *(self as *mut $typ as *mut $name) }
             }
         }
 
@@ -129,7 +136,7 @@ macro_rules! wrapper_type_no_clone {
 
 unsafe extern "C" fn nk_filter_custom(arg1: *const nk_text_edit, unicode: nk_rune) -> ::std::os::raw::c_int {
     if let Some(f) = CUSTOM_EDIT_FILTER {
-        if f(::std::mem::transmute(arg1), ::std::char::from_u32_unchecked(unicode)) {
+        if f(&*(arg1 as *const TextEdit), ::std::char::from_u32_unchecked(unicode)) {
             1
         } else {
             0
@@ -299,6 +306,9 @@ impl<'a> StringArray<'a> {
     pub fn len(&self) -> usize {
         self.ptrs.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.len() < 1
+    }
 }
 
 impl<'a> From<&'a [&'a str]> for StringArray<'a> {
@@ -365,10 +375,10 @@ impl Handle {
         }
     }
 
-    pub fn from_ptr(value: *mut c_void) -> Handle {
+    pub unsafe fn from_ptr(value: *mut c_void) -> Handle {
         Handle {
             kind: HandleKind::Ptr,
-            internal: unsafe { nk_handle_ptr(value) },
+            internal: nk_handle_ptr(value),
         }
     }
 }
@@ -2689,7 +2699,7 @@ impl<'a> Default for CursorMap<'a> {
         unsafe {
             let mut map = CursorMap { internal: [::std::mem::zeroed(); 7] };
 
-            for i in map.internal.iter_mut() {
+            for i in &mut map.internal {
                 ::std::ptr::write(i, None);
             }
 
@@ -2700,7 +2710,7 @@ impl<'a> Default for CursorMap<'a> {
 
 impl<'a> CursorMap<'a> {
     pub fn set(&mut self, target: StyleCursor, res: Option<&'a Cursor>) {
-        self.internal[target as usize] = unsafe { ::std::mem::transmute(res) };
+        self.internal[target as usize] = res;
     }
 }
 
@@ -2915,7 +2925,7 @@ impl FontConfig {
         self.internal.oversample_h
     }
 
-    pub fn glyph_range<'a>(&'a self) -> Option<&'a [(u32, u32)]> {
+    pub fn glyph_range(&self) -> Option<&[(u32, u32)]> {
         if self.internal.range.is_null() {
             None
         } else {
@@ -3057,7 +3067,7 @@ impl FontAtlas {
         self.add_font_with_config(&cfg)
     }
 
-    pub fn bake<'a>(&'a mut self, format: FontAtlasFormat) -> (&'a [u8], u32, u32) {
+    pub fn bake(&mut self, format: FontAtlasFormat) -> (&[u8], u32, u32) {
         let mut width: i32 = 0;
         let mut height: i32 = 0;
 
@@ -3140,7 +3150,7 @@ impl FontAtlas {
         unsafe { ::std::slice::from_raw_parts(self.internal.glyphs as *const _ as *const FontGlyph, self.internal.glyph_count as usize) }
     }
 
-    pub fn fonts_iterator<'a>(&'a self) -> FontIterator<'a> {
+    pub fn fonts_iterator(&self) -> FontIterator {
         FontIterator { ctx: self }
     }
 
@@ -3158,7 +3168,7 @@ impl<'a> IntoIterator for FontIterator<'a> {
 
     fn into_iter(self) -> Self::IntoIter {
         let font = if self.ctx.internal.fonts.is_null() { None } else { Some(unsafe { ::std::mem::transmute(self.ctx.internal.fonts) }) };
-        FontIntoIter { font: font }
+        FontIntoIter { font }
     }
 }
 pub struct FontIntoIter<'a> {
@@ -3167,7 +3177,7 @@ pub struct FontIntoIter<'a> {
 impl<'a> Iterator for FontIntoIter<'a> {
     type Item = &'a Font;
     fn next(&mut self) -> Option<&'a Font> {
-        let r = self.font.clone();
+        let r = self.font;
 
         self.font = if let Some(p) = self.font {
             if p.internal.next.is_null() {
@@ -4369,7 +4379,7 @@ impl Context {
         }
     }
 
-    pub fn begin_cmd<'a>(&'a self) -> Option<&'a Command> {
+    pub fn begin_cmd(&self) -> Option<&Command> {
         let r = unsafe { nk__begin(&self.internal as *const _ as *mut nk_context) };
         unsafe {
             if r.is_null() {
@@ -4381,10 +4391,10 @@ impl Context {
     }
 
     pub fn draw_command_iterator<'a>(&'a mut self, buf: &'a Buffer) -> DrawCommandIterator<'a> {
-        DrawCommandIterator { ctx: self, buf: buf }
+        DrawCommandIterator { ctx: self, buf }
     }
 
-    pub fn command_iterator<'a>(&'a mut self) -> CommandIterator<'a> {
+    pub fn command_iterator(&mut self) -> CommandIterator {
         CommandIterator { ctx: self }
     }
 }
@@ -4401,7 +4411,7 @@ impl<'a> IntoIterator for CommandIterator<'a> {
 
     fn into_iter(self) -> Self::IntoIter {
         let cmd = self.ctx.begin_cmd();
-        CommandIntoIter { ctx: self.ctx, cmd: cmd }
+        CommandIntoIter { ctx: self.ctx, cmd }
     }
 }
 
@@ -4413,7 +4423,7 @@ pub struct CommandIntoIter<'a> {
 impl<'a> Iterator for CommandIntoIter<'a> {
     type Item = &'a Command;
     fn next(&mut self) -> Option<&'a Command> {
-        let r = self.cmd.clone();
+        let r = self.cmd;
 
         self.cmd = if let Some(p) = self.cmd { self.ctx.next_cmd(p) } else { None };
 
@@ -4434,7 +4444,7 @@ impl<'a> IntoIterator for DrawCommandIterator<'a> {
 
     fn into_iter(self) -> Self::IntoIter {
         let cmd = self.ctx.draw_begin(self.buf);
-        DrawCommandIntoIter { ctx: self.ctx, buf: self.buf, cmd: cmd }
+        DrawCommandIntoIter { ctx: self.ctx, buf: self.buf, cmd }
     }
 }
 
@@ -4447,7 +4457,7 @@ pub struct DrawCommandIntoIter<'a> {
 impl<'a> Iterator for DrawCommandIntoIter<'a> {
     type Item = &'a DrawCommand;
     fn next(&mut self) -> Option<&'a DrawCommand> {
-        let r = self.cmd.clone();
+        let r = self.cmd;
 
         self.cmd = if let Some(ref p) = self.cmd { self.ctx.draw_next(p, self.buf) } else { None };
 
@@ -4463,7 +4473,7 @@ impl Window {
     pub fn seq(&self) -> u32 {
         self.internal.seq
     }
-    pub fn name<'a>(&'a self) -> &'a str {
+    pub fn name(&self) -> &str {
         unsafe {
             let name = ::std::mem::transmute::<&[i8], &[u8]>(&self.internal.name_string);
             let mut len = name.len();
@@ -5411,8 +5421,8 @@ impl Image {
         Image { internal: unsafe { nk_image_id(id) } }
     }
 
-    pub fn with_ptr(ptr: *mut c_void) -> Image {
-        Image { internal: unsafe { nk_image_ptr(ptr) } }
+    pub unsafe fn with_ptr(ptr: *mut c_void) -> Image {
+        Image { internal: nk_image_ptr(ptr) }
     }
 
     pub fn id(&mut self) -> i32 {
@@ -5501,7 +5511,7 @@ fn raw_glyph_ranges_to_safe<'a>(arg: *const nk_rune) -> &'a [(u32, u32)] {
     unsafe {
         let len32 = (::std::mem::size_of::<(u32, u32)>() / ::std::mem::size_of::<u32>()) as isize;
 
-        let mut raw2 = arg.clone();
+        let mut raw2 = arg;
 
         let mut i = 0xffff;
         let mut len = 0;
