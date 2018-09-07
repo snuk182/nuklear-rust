@@ -21,7 +21,6 @@ use std::os::raw::*;
 
 use nuklear_sys::*;
 
-//pub use nuklear_sys;
 pub use nuklear_sys::nk_allocation_type as AllocationType;
 pub use nuklear_sys::nk_anti_aliasing as AntiAliasing;
 pub use nuklear_sys::nk_button_behavior as ButtonBehavior;
@@ -3243,6 +3242,7 @@ impl FontAtlas {
     }
 
     pub fn font(&self, id: FontID) -> Option<&Font> {
+        let id = self.internal.font_num as usize - id - 1;
         self.fonts_iterator().into_iter().nth(id)
     }
 }
