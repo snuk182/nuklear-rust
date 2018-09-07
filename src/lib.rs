@@ -5,7 +5,7 @@
 #![cfg_attr(feature = "cargo-clippy", allow(trivially_copy_pass_by_ref))] // API requirement
 #![cfg_attr(feature = "cargo-clippy", allow(cast_ptr_alignment))] // required by allocator
 
-#![cfg_attr(feature = "rust_allocator", feature(allocator_api, alloc, heap_api))]
+#![cfg_attr(feature = "rust_allocator", feature(allocator_api, alloc))]
 
 #[macro_use]
 extern crate log;
@@ -538,8 +538,96 @@ impl Mouse {
 wrapper_type!(Style, nk_style);
 
 impl Style {
-    pub fn window(&mut self) -> &mut StyleWindow {
+    // ===== mut getters =====
+    
+    pub fn window_mut(&mut self) -> &mut StyleWindow {
         unsafe { ::std::mem::transmute(&mut self.internal.window) }
+    }
+    
+    pub fn font_mut(&mut self) -> &mut UserFont {
+        unsafe { ::std::mem::transmute(self.internal.font) }
+    }
+
+    pub fn cursors_mut(&mut self) -> &mut CursorMap {
+        unsafe { ::std::mem::transmute(&mut self.internal.cursors) }
+    }
+
+    pub fn cursor_active_mut(&mut self) -> &mut Cursor {
+        unsafe { ::std::mem::transmute(&mut self.internal.cursor_active) }
+    }
+
+    pub fn set_cursor_visible(&mut self, value: bool) {
+        self.internal.cursor_visible = if value { 1 } else { 0 }
+    }
+
+    pub fn text_mut(&mut self) -> &mut StyleText {
+        &mut self.internal.text
+    }
+
+    pub fn button_mut(&mut self) -> &mut StyleButton {
+        unsafe { ::std::mem::transmute(&mut self.internal.button) }
+    }
+
+    pub fn contextual_button_mut(&mut self) -> &mut StyleButton {
+        unsafe { ::std::mem::transmute(&mut self.internal.contextual_button) }
+    }
+
+    pub fn menu_button_mut(&mut self) -> &mut StyleButton {
+        unsafe { ::std::mem::transmute(&mut self.internal.menu_button) }
+    }
+
+    pub fn option_mut(&mut self) -> &mut StyleToggle {
+        unsafe { ::std::mem::transmute(&mut self.internal.option) }
+    }
+
+    pub fn checkbox_mut(&mut self) -> &mut StyleToggle {
+        unsafe { ::std::mem::transmute(&mut self.internal.checkbox) }
+    }
+
+    pub fn selectable_mut(&mut self) -> &mut StyleSelectable {
+        unsafe { ::std::mem::transmute(&mut self.internal.selectable) }
+    }
+
+    pub fn slider_mut(&mut self) -> &mut StyleSlider {
+        unsafe { ::std::mem::transmute(&mut self.internal.slider) }
+    }
+
+    pub fn progress_mut(&mut self) -> &mut StyleProgress {
+        unsafe { ::std::mem::transmute(&mut self.internal.progress) }
+    }
+
+    pub fn property_mut(&mut self) -> &mut StyleProperty {
+        unsafe { ::std::mem::transmute(&mut self.internal.property) }
+    }
+
+    pub fn edit_mut(&mut self) -> &mut StyleEdit {
+        unsafe { ::std::mem::transmute(&mut self.internal.edit) }
+    }
+
+    pub fn chart_mut(&mut self) -> &mut StyleChart {
+        unsafe { ::std::mem::transmute(&mut self.internal.chart) }
+    }
+
+    pub fn scroll_h_mut(&mut self) -> &mut StyleScrollbar {
+        unsafe { ::std::mem::transmute(&mut self.internal.scrollh) }
+    }
+
+    pub fn scroll_v_mut(&mut self) -> &mut StyleScrollbar {
+        unsafe { ::std::mem::transmute(&mut self.internal.scrollv) }
+    }
+
+    pub fn tab_mut(&mut self) -> &mut StyleTab {
+        unsafe { ::std::mem::transmute(&mut self.internal.tab) }
+    }
+
+    pub fn combo_mut(&mut self) -> &mut StyleCombo {
+        unsafe { ::std::mem::transmute(&mut self.internal.combo) }
+    }
+    
+    // ===== getters =====
+
+    pub fn window(&self) -> &StyleWindow {
+        unsafe { ::std::mem::transmute(&self.internal.window) }
     }
 
     pub fn font(&self) -> &UserFont {
@@ -3299,16 +3387,28 @@ impl Context {
         a
     }
 
-    pub fn input(&mut self) -> &mut Input {
+    pub fn input_mut(&mut self) -> &mut Input {
         unsafe { ::std::mem::transmute(&mut self.internal.input) }
     }
 
-    pub fn style(&mut self) -> &mut Style {
+    pub fn style_mut(&mut self) -> &mut Style {
         unsafe { ::std::mem::transmute(&mut self.internal.style) }
     }
 
-    pub fn draw_list(&mut self) -> &mut DrawList {
+    pub fn draw_list_mut(&mut self) -> &mut DrawList {
         unsafe { ::std::mem::transmute(&mut self.internal.draw_list) }
+    }
+    
+    pub fn input(&self) -> &Input {
+        unsafe { ::std::mem::transmute(&self.internal.input) }
+    }
+
+    pub fn style(&self) -> &Style {
+        unsafe { ::std::mem::transmute(&self.internal.style) }
+    }
+
+    pub fn draw_list(&self) -> &DrawList {
+        unsafe { ::std::mem::transmute(&self.internal.draw_list) }
     }
 
     pub fn clear(&mut self) {
@@ -3331,7 +3431,18 @@ impl Context {
         }
     }
 
-    pub fn window_find(&mut self, name: String) -> Option<&mut Window> {
+    pub fn window_find(&self, name: String) -> Option<&Window> {
+        let w = unsafe { nk_window_find(&self.internal as *const _ as *mut nk_context, name.as_ptr()) };
+
+        unsafe {
+            if w.is_null() {
+                None
+            } else {
+                Some(::std::mem::transmute(w))
+            }
+        }
+    }
+    pub fn window_find_mut(&mut self, name: String) -> Option<&mut Window> {
         let w = unsafe { nk_window_find(&mut self.internal as *mut nk_context, name.as_ptr()) };
 
         unsafe {
@@ -3363,7 +3474,7 @@ impl Context {
         unsafe { nk_window_get_height(&self.internal as *const nk_context) }
     }
 
-    pub fn window_get_panel(&mut self) -> Option<&mut Panel> {
+    pub fn window_get_panel_mut(&mut self) -> Option<&mut Panel> {
         let p = unsafe { nk_window_get_panel(&mut self.internal as *mut nk_context) };
 
         unsafe {
@@ -3374,25 +3485,46 @@ impl Context {
             }
         }
     }
+    pub fn window_get_panel(&self) -> Option<&Panel> {
+        let p = unsafe { nk_window_get_panel(&self.internal as *const _ as *mut nk_context) };
 
-    pub fn window_get_content_region(&mut self) -> Rect {
-        unsafe { nk_window_get_content_region(&mut self.internal as *mut nk_context) }
+        unsafe {
+            if p.is_null() {
+                None
+            } else {
+                Some(::std::mem::transmute(p))
+            }
+        }
     }
 
-    pub fn window_get_content_region_min(&mut self) -> Vec2 {
-        unsafe { nk_window_get_content_region_min(&mut self.internal as *mut nk_context) }
+    pub fn window_get_content_region(&self) -> Rect {
+        unsafe { nk_window_get_content_region(&self.internal as *const _ as *mut nk_context) }
     }
 
-    pub fn window_get_content_region_max(&mut self) -> Vec2 {
-        unsafe { nk_window_get_content_region_max(&mut self.internal as *mut nk_context) }
+    pub fn window_get_content_region_min(&self) -> Vec2 {
+        unsafe { nk_window_get_content_region_min(&self.internal as *const _ as *mut nk_context) }
     }
 
-    pub fn window_get_content_region_size(&mut self) -> Vec2 {
-        unsafe { nk_window_get_content_region_size(&mut self.internal as *mut nk_context) }
+    pub fn window_get_content_region_max(&self) -> Vec2 {
+        unsafe { nk_window_get_content_region_max(&self.internal as *const _ as *mut nk_context) }
     }
 
-    pub fn window_get_canvas(&mut self) -> Option<&mut CommandBuffer> {
+    pub fn window_get_content_region_size(&self) -> Vec2 {
+        unsafe { nk_window_get_content_region_size(&self.internal as *const _ as *mut nk_context) }
+    }
+
+    pub fn window_get_canvas_mut(&mut self) -> Option<&mut CommandBuffer> {
         let b = unsafe { nk_window_get_canvas(&mut self.internal as *mut nk_context) };
+        unsafe {
+            if b.is_null() {
+                None
+            } else {
+                Some(::std::mem::transmute(b))
+            }
+        }
+    }
+    pub fn window_get_canvas(&self) -> Option<&CommandBuffer> {
+        let b = unsafe { nk_window_get_canvas(&self.internal as *const _ as *mut nk_context) };
         unsafe {
             if b.is_null() {
                 None
@@ -3406,32 +3538,32 @@ impl Context {
         unsafe { nk_window_has_focus(&self.internal as *const nk_context) > 0 }
     }
 
-    pub fn window_is_collapsed(&mut self, name: String) -> bool {
-        unsafe { nk_window_is_collapsed(&mut self.internal as *mut nk_context, name.as_ptr()) > 0 }
+    pub fn window_is_collapsed(&self, name: String) -> bool {
+        unsafe { nk_window_is_collapsed(&self.internal as *const _  as *mut nk_context, name.as_ptr()) > 0 }
     }
 
-    pub fn window_is_closed(&mut self, name: String) -> bool {
-        unsafe { nk_window_is_closed(&mut self.internal as *mut nk_context, name.as_ptr()) > 0 }
+    pub fn window_is_closed(&self, name: String) -> bool {
+        unsafe { nk_window_is_closed(&self.internal as *const _ as *mut nk_context, name.as_ptr()) > 0 }
     }
 
-    pub fn window_is_hidden(&mut self, name: String) -> bool {
-        unsafe { nk_window_is_hidden(&mut self.internal as *mut nk_context, name.as_ptr()) > 0 }
+    pub fn window_is_hidden(&self, name: String) -> bool {
+        unsafe { nk_window_is_hidden(&self.internal as *const _ as *mut nk_context, name.as_ptr()) > 0 }
     }
 
-    pub fn window_is_active(&mut self, name: String) -> bool {
-        unsafe { nk_window_is_active(&mut self.internal as *mut nk_context, name.as_ptr()) > 0 }
+    pub fn window_is_active(&self, name: String) -> bool {
+        unsafe { nk_window_is_active(&self.internal as *const _ as *mut nk_context, name.as_ptr()) > 0 }
     }
 
-    pub fn window_is_hovered(&mut self) -> bool {
-        unsafe { nk_window_is_hovered(&mut self.internal as *mut nk_context) > 0 }
+    pub fn window_is_hovered(&self) -> bool {
+        unsafe { nk_window_is_hovered(&self.internal as *const _ as *mut nk_context) > 0 }
     }
 
-    pub fn window_is_any_hovered(&mut self) -> bool {
-        unsafe { nk_window_is_any_hovered(&mut self.internal as *mut nk_context) > 0 }
+    pub fn window_is_any_hovered(&self) -> bool {
+        unsafe { nk_window_is_any_hovered(&self.internal as *const _ as *mut nk_context) > 0 }
     }
 
-    pub fn item_is_any_active(&mut self) -> bool {
-        unsafe { nk_item_is_any_active(&mut self.internal as *mut nk_context) > 0 }
+    pub fn item_is_any_active(&self) -> bool {
+        unsafe { nk_item_is_any_active(&self.internal as *const _ as *mut nk_context) > 0 }
     }
 
     pub fn window_set_bounds(&mut self, bounds: Rect) {

@@ -1,6 +1,6 @@
 [package]
 name = "nuklear-rust"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Serhii Plyhun <snuk188@gmail.com>"]
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
 description = "Rust wrapper for Nuklear 2D GUI library (github.com/vurtun/nuklear)"

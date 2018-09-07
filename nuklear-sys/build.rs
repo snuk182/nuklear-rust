@@ -12,6 +12,7 @@ fn main() {
     }
     cc::Build::new()
         .file("nuklear-c/bind.c")
+        .flag("-Wno-unused-parameter")
+        .flag("-Wno-implicit-fallthrough")
         .compile("libnuklear");
-    //gcc::compile_library("libnuklear.a", &["nuklear-c/bind.c"]);
 }
