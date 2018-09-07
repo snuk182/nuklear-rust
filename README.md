@@ -13,4 +13,4 @@ Drawing backends:
 
 All examples are based on the [extended example](https://github.com/vurtun/nuklear/blob/master/example/extended.c) of the original library.
 
-API suggestions, PRs and improvement ideas are welcome! Don't have much experience of building highly capable UI libraries yet.
+API suggestions, PRs and improvement ideas are welcome! 
