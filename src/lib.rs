@@ -21,8 +21,8 @@ use std::os::raw::*;
 
 use nuklear_sys::*;
 
+pub use nuklear_sys;
 pub use nuklear_sys::nk_allocation_type as AllocationType;
-pub use nuklear_sys::nk_command_type as CommandType;
 pub use nuklear_sys::nk_draw_list_stroke as DrawListStroke;
 pub use nuklear_sys::nk_flags as Flags; //TODO
 pub use nuklear_sys::nk_font_coord_type as FontCoordType;
@@ -133,6 +133,33 @@ macro_rules! from_into_enum {
         }
     };
 }
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum CommandType {
+    Nop = nk_command_type_NK_COMMAND_NOP as isize,
+    Scissor = nk_command_type_NK_COMMAND_SCISSOR as isize,
+    Line = nk_command_type_NK_COMMAND_LINE as isize,
+    Curve = nk_command_type_NK_COMMAND_CURVE as isize,
+    Rect = nk_command_type_NK_COMMAND_RECT as isize,
+    RectFilled = nk_command_type_NK_COMMAND_RECT_FILLED as isize,
+    RectMultiColor = nk_command_type_NK_COMMAND_RECT_MULTI_COLOR as isize,
+    Circle = nk_command_type_NK_COMMAND_CIRCLE as isize,
+    CircleFilled = nk_command_type_NK_COMMAND_CIRCLE_FILLED as isize,
+    Arc = nk_command_type_NK_COMMAND_ARC as isize,
+    ArcFilled = nk_command_type_NK_COMMAND_ARC_FILLED as isize,
+    Triangle = nk_command_type_NK_COMMAND_TRIANGLE as isize,
+    TriangleFilled = nk_command_type_NK_COMMAND_TRIANGLE_FILLED as isize,
+    Polygon = nk_command_type_NK_COMMAND_POLYGON as isize,
+    PolygonFilled = nk_command_type_NK_COMMAND_POLYGON_FILLED as isize,
+    Polyline = nk_command_type_NK_COMMAND_POLYLINE as isize,
+    Text = nk_command_type_NK_COMMAND_TEXT as isize,
+    Image = nk_command_type_NK_COMMAND_IMAGE as isize,
+    Custom = nk_command_type_NK_COMMAND_CUSTOM as isize,
+}
+from_into_enum!(CommandType, nk_command_type);
 
 // ==========================================================================================================
 
@@ -393,8 +420,8 @@ pub enum Key {
     ResetMode = nk_keys_NK_KEY_TEXT_RESET_MODE as isize,
     LineStart = nk_keys_NK_KEY_TEXT_LINE_START as isize,
     LineEnd = nk_keys_NK_KEY_TEXT_LINE_END as isize,
-    Start = nk_keys_NK_KEY_TEXT_START as isize,
-    End = nk_keys_NK_KEY_TEXT_END as isize,
+    TextStart = nk_keys_NK_KEY_TEXT_START as isize,
+    TextEnd = nk_keys_NK_KEY_TEXT_END as isize,
     TextUndo = nk_keys_NK_KEY_TEXT_UNDO as isize,
     TextRedo = nk_keys_NK_KEY_TEXT_REDO as isize,
     TextSelectAll = nk_keys_NK_KEY_TEXT_SELECT_ALL as isize,
@@ -5326,7 +5353,7 @@ wrapper_type!(Command, nk_command);
 
 impl Command {
     pub fn get_type(&self) -> CommandType {
-        self.internal.type_
+        self.internal.type_.into()
     }
 }
 
