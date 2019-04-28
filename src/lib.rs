@@ -781,7 +781,7 @@ impl Input {
         unsafe { nk_input_is_mouse_pressed(&self.internal, b.into()) != 0 }
     }
 
-    pub fn nk_input_is_mouse_released(&self, b: Button) -> bool {
+    pub fn is_mouse_released(&self, b: Button) -> bool {
         unsafe { nk_input_is_mouse_released(&self.internal, b.into()) != 0 }
     }
 
@@ -4037,7 +4037,7 @@ impl Context {
         unsafe { nk_layout_ratio_from_pixel(&mut self.internal as *mut nk_context, pixel_width) }
     }
 
-    pub fn nk_group_begin(&mut self, title: String, flags: Flags) -> i32 {
+    pub fn group_begin(&mut self, title: String, flags: Flags) -> i32 {
         unsafe { nk_group_begin(&mut self.internal as *mut nk_context, title.as_ptr(), flags) }
     }
 
