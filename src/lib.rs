@@ -4,12 +4,12 @@
 #![cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))] // API requirement
 #![cfg_attr(feature = "cargo-clippy", allow(trivially_copy_pass_by_ref))] // API requirement
 #![cfg_attr(feature = "cargo-clippy", allow(cast_ptr_alignment))] // required by allocator
-
-#![cfg_attr(feature = "rust_allocator", feature(allocator_api, alloc))]
+#![cfg_attr(feature = "cargo-clippy", allow(non_upper_case_globals))]
+#![allow(non_upper_case_globals)]
+#![cfg_attr(feature = "rust_allocator", feature(allocator_api))]
 
 #[macro_use]
 extern crate log;
-pub extern crate nuklear_sys;
 
 #[cfg(feature = "rust_allocator")]
 mod alloc_heap;
@@ -22,43 +22,26 @@ use std::os::raw::*;
 use nuklear_sys::*;
 
 pub use nuklear_sys::nk_allocation_type as AllocationType;
-pub use nuklear_sys::nk_anti_aliasing as AntiAliasing;
-pub use nuklear_sys::nk_button_behavior as ButtonBehavior;
-pub use nuklear_sys::nk_buttons as Button;
-pub use nuklear_sys::nk_chart_type as ChartType;
-pub use nuklear_sys::nk_collapse_states as CollapseState;
-pub use nuklear_sys::nk_color_format as ColorFormat;
 pub use nuklear_sys::nk_command_type as CommandType;
 pub use nuklear_sys::nk_draw_list_stroke as DrawListStroke;
-pub use nuklear_sys::nk_draw_vertex_layout_attribute as DrawVertexLayoutAttribute;
-pub use nuklear_sys::nk_draw_vertex_layout_format as DrawVertexLayoutFormat;
-pub use nuklear_sys::nk_edit_types as EditType;
 pub use nuklear_sys::nk_flags as Flags; //TODO
-pub use nuklear_sys::nk_font_atlas_format as FontAtlasFormat;
 pub use nuklear_sys::nk_font_coord_type as FontCoordType;
-pub use nuklear_sys::nk_keys as Key;
-pub use nuklear_sys::nk_layout_format as LayoutFormat;
 pub use nuklear_sys::nk_panel_row_layout_type as PanelRowLayoutType;
 pub use nuklear_sys::nk_panel_type as PanelType;
-pub use nuklear_sys::nk_popup_type as PopupType;
-pub use nuklear_sys::nk_show_states as ShowState;
 pub use nuklear_sys::nk_style_colors as StyleColor;
 pub use nuklear_sys::nk_style_cursor as StyleCursor;
 pub use nuklear_sys::nk_style_header_align as StyleHeaderAlign;
-pub use nuklear_sys::nk_symbol_type as SymbolType;
-pub use nuklear_sys::nk_tree_type as TreeType;
 pub use nuklear_sys::nk_widget_layout_states as WidgetLayoutState;
-
-pub use nuklear_sys::nk_panel_flags as PanelFlags;
-pub use nuklear_sys::nk_text_alignment as TextAlignment;
 
 pub use nuklear_sys::nk_chart_slot as ChartSlot;
 pub use nuklear_sys::nk_color as Color;
+pub use nuklear_sys::nk_colorf as ColorF;
 pub use nuklear_sys::nk_menu_state as MenuState;
 pub use nuklear_sys::nk_popup_buffer as PopupBuffer;
 pub use nuklear_sys::nk_rect as Rect;
 pub use nuklear_sys::nk_recti as Recti;
 pub use nuklear_sys::nk_scroll as Scroll;
+pub use nuklear_sys::nk_size as Size;
 pub use nuklear_sys::nk_style_text as StyleText;
 pub use nuklear_sys::nk_vec2 as Vec2;
 pub use nuklear_sys::nk_vec2i as Vec2i;
@@ -110,7 +93,7 @@ macro_rules! wrapper_impls {
 
 macro_rules! wrapper_type {
     ($name:ident, $typ:ty) => {
-        #[derive(Clone, Debug)]
+        #[derive(Clone)]
         #[repr(C)]
         pub struct $name {
             internal: $typ,
@@ -130,6 +113,372 @@ macro_rules! wrapper_type_no_clone {
         wrapper_impls!($name, $typ);
     };
 }
+
+macro_rules! from_into_enum {
+    ($name:ident, $typ:ty) => {
+        impl From<$name> for $typ {
+            fn from(a: $name) -> $typ {
+                a as $typ
+            }
+        }
+        impl From<$typ> for $name {
+            fn from(a: $typ) -> $name {
+                unsafe { ::std::mem::transmute(a) }
+            }
+        }
+        impl<'a> From<&'a $typ> for &'a $name {
+            fn from(a: &'a $typ) -> &'a $name {
+                unsafe { ::std::mem::transmute(a) }
+            }
+        }
+    };
+}
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum SymbolType {
+    None = nk_symbol_type_NK_SYMBOL_NONE as isize,
+    X = nk_symbol_type_NK_SYMBOL_X as isize,
+    Underscore = nk_symbol_type_NK_SYMBOL_UNDERSCORE as isize,
+    CircleSolid = nk_symbol_type_NK_SYMBOL_CIRCLE_SOLID as isize,
+    CircleOutline = nk_symbol_type_NK_SYMBOL_CIRCLE_OUTLINE as isize,
+    RectSolid = nk_symbol_type_NK_SYMBOL_RECT_SOLID as isize,
+    RectOutline = nk_symbol_type_NK_SYMBOL_RECT_OUTLINE as isize,
+    TriangleUp = nk_symbol_type_NK_SYMBOL_TRIANGLE_UP as isize,
+    TriangleDown = nk_symbol_type_NK_SYMBOL_TRIANGLE_DOWN as isize,
+    TriangleLeft = nk_symbol_type_NK_SYMBOL_TRIANGLE_LEFT as isize,
+    TriangleRight = nk_symbol_type_NK_SYMBOL_TRIANGLE_RIGHT as isize,
+    Plus = nk_symbol_type_NK_SYMBOL_PLUS as isize,
+    Minus = nk_symbol_type_NK_SYMBOL_MINUS as isize,
+    Max = nk_symbol_type_NK_SYMBOL_MAX as isize,
+}
+from_into_enum!(SymbolType, nk_symbol_type);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum EditFlag {
+    Default = nk_edit_flags_NK_EDIT_DEFAULT as isize,
+    ReadOnly = nk_edit_flags_NK_EDIT_READ_ONLY as isize,
+    AutoSelect = nk_edit_flags_NK_EDIT_AUTO_SELECT as isize,
+    SigEnter = nk_edit_flags_NK_EDIT_SIG_ENTER as isize,
+    AllowTab = nk_edit_flags_NK_EDIT_ALLOW_TAB as isize,
+    NoCursor = nk_edit_flags_NK_EDIT_NO_CURSOR as isize,
+    Selectable = nk_edit_flags_NK_EDIT_SELECTABLE as isize,
+    Clipboard = nk_edit_flags_NK_EDIT_CLIPBOARD as isize,
+    CtrlEnterNewline = nk_edit_flags_NK_EDIT_CTRL_ENTER_NEWLINE as isize,
+    NoHorizontalScroll = nk_edit_flags_NK_EDIT_NO_HORIZONTAL_SCROLL as isize,
+    AlwaysInsertMode = nk_edit_flags_NK_EDIT_ALWAYS_INSERT_MODE as isize,
+    Multiline = nk_edit_flags_NK_EDIT_MULTILINE as isize,
+    GoToEndOnActivate = nk_edit_flags_NK_EDIT_GOTO_END_ON_ACTIVATE as isize,
+}
+from_into_enum!(EditFlag, nk_edit_flags);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum EditType {
+    Simple = nk_edit_types_NK_EDIT_SIMPLE as isize,
+    Field = nk_edit_types_NK_EDIT_FIELD as isize,
+    Box = nk_edit_types_NK_EDIT_BOX as isize,
+    Editor = nk_edit_types_NK_EDIT_EDITOR as isize,
+}
+from_into_enum!(EditType, nk_edit_types);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum EditEvent {
+    Active = nk_edit_events_NK_EDIT_ACTIVE as isize,
+    Inactive = nk_edit_events_NK_EDIT_INACTIVE as isize,
+    Activated = nk_edit_events_NK_EDIT_ACTIVATED as isize,
+    Deactivated = nk_edit_events_NK_EDIT_DEACTIVATED as isize,
+    Commited = nk_edit_events_NK_EDIT_COMMITED as isize,
+}
+from_into_enum!(EditEvent, nk_edit_events);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum PanelFlags {
+    Border = nk_panel_flags_NK_WINDOW_BORDER as isize,
+    Movable = nk_panel_flags_NK_WINDOW_MOVABLE as isize,
+    Scalable = nk_panel_flags_NK_WINDOW_SCALABLE as isize,
+    Closable = nk_panel_flags_NK_WINDOW_CLOSABLE as isize,
+    Minimizable = nk_panel_flags_NK_WINDOW_MINIMIZABLE as isize,
+    NoScrollbar = nk_panel_flags_NK_WINDOW_NO_SCROLLBAR as isize,
+    Title = nk_panel_flags_NK_WINDOW_TITLE as isize,
+    ScrollAutoHide = nk_panel_flags_NK_WINDOW_SCROLL_AUTO_HIDE as isize,
+    Background = nk_panel_flags_NK_WINDOW_BACKGROUND as isize,
+    ScaleLeft = nk_panel_flags_NK_WINDOW_SCALE_LEFT as isize,
+    NoInput = nk_panel_flags_NK_WINDOW_NO_INPUT as isize,
+}
+from_into_enum!(PanelFlags, nk_panel_flags);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Heading {
+    Up = nk_heading_NK_UP as isize,
+    Right = nk_heading_NK_RIGHT as isize,
+    Down = nk_heading_NK_DOWN as isize,
+    Left = nk_heading_NK_LEFT as isize,
+}
+from_into_enum!(Heading, nk_heading);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ButtonBehavior {
+    Default = nk_button_behavior_NK_BUTTON_DEFAULT as isize,
+    Repeater = nk_button_behavior_NK_BUTTON_REPEATER as isize,
+}
+from_into_enum!(ButtonBehavior, nk_button_behavior);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Modify {
+    Fixed = nk_modify_NK_FIXED as isize,
+    Modifiable = nk_modify_NK_MODIFIABLE as isize,
+}
+from_into_enum!(Modify, nk_modify);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Orientation {
+    Vertical = nk_orientation_NK_VERTICAL as isize,
+    Horizontal = nk_orientation_NK_HORIZONTAL as isize,
+}
+from_into_enum!(Orientation, nk_orientation);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum CollapseState {
+    Minimized = nk_collapse_states_NK_MINIMIZED as isize,
+    Maximized = nk_collapse_states_NK_MAXIMIZED as isize,
+}
+from_into_enum!(CollapseState, nk_collapse_states);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ShowState {
+    Hidden = nk_show_states_NK_HIDDEN as isize,
+    Shown = nk_show_states_NK_SHOWN as isize,
+}
+from_into_enum!(ShowState, nk_show_states);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ChartType {
+    Lines = nk_chart_type_NK_CHART_LINES as isize,
+    Column = nk_chart_type_NK_CHART_COLUMN as isize,
+    Max = nk_chart_type_NK_CHART_MAX as isize,
+}
+from_into_enum!(ChartType, nk_chart_type);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ChartEvent {
+    Hovering = nk_chart_event_NK_CHART_HOVERING as isize,
+    Clicked = nk_chart_event_NK_CHART_CLICKED as isize,
+}
+from_into_enum!(ChartEvent, nk_chart_event);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ColorFormat {
+    Rgb = nk_color_format_NK_RGB as isize,
+    Rgba = nk_color_format_NK_RGBA as isize,
+}
+from_into_enum!(ColorFormat, nk_color_format);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum PopupType {
+    Static = nk_popup_type_NK_POPUP_STATIC as isize,
+    Dynamic = nk_popup_type_NK_POPUP_DYNAMIC as isize,
+}
+from_into_enum!(PopupType, nk_popup_type);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum LayoutFormat {
+    Dynamic = nk_layout_format_NK_DYNAMIC as isize,
+    Static = nk_layout_format_NK_STATIC as isize,
+}
+from_into_enum!(LayoutFormat, nk_layout_format);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum TreeType {
+    Node = nk_tree_type_NK_TREE_NODE as isize,
+    Tab = nk_tree_type_NK_TREE_TAB as isize,
+}
+from_into_enum!(TreeType, nk_tree_type);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum TextAlign {
+    Left = nk_text_align_NK_TEXT_ALIGN_LEFT as isize,
+    Centered = nk_text_align_NK_TEXT_ALIGN_CENTERED as isize,
+    Right = nk_text_align_NK_TEXT_ALIGN_RIGHT as isize,
+    Top = nk_text_align_NK_TEXT_ALIGN_TOP as isize,
+    Middle = nk_text_align_NK_TEXT_ALIGN_MIDDLE as isize,
+    Bottom = nk_text_align_NK_TEXT_ALIGN_BOTTOM as isize,
+}
+from_into_enum!(TextAlign, nk_text_align);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum TextAlignment {
+    Left = nk_text_alignment_NK_TEXT_LEFT as isize,
+    Centered = nk_text_alignment_NK_TEXT_CENTERED as isize,
+    Right = nk_text_alignment_NK_TEXT_RIGHT as isize,
+}
+from_into_enum!(TextAlignment, nk_text_alignment);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Key {
+    None = nk_keys_NK_KEY_NONE as isize,
+    Shift = nk_keys_NK_KEY_SHIFT as isize,
+    Ctrl = nk_keys_NK_KEY_CTRL as isize,
+    Del = nk_keys_NK_KEY_DEL as isize,
+    Enter = nk_keys_NK_KEY_ENTER as isize,
+    Tab = nk_keys_NK_KEY_TAB as isize,
+    Backspace = nk_keys_NK_KEY_BACKSPACE as isize,
+    Copy = nk_keys_NK_KEY_COPY as isize,
+    Cut = nk_keys_NK_KEY_CUT as isize,
+    Paste = nk_keys_NK_KEY_PASTE as isize,
+    Up = nk_keys_NK_KEY_UP as isize,
+    Down = nk_keys_NK_KEY_DOWN as isize,
+    Left = nk_keys_NK_KEY_LEFT as isize,
+    Right = nk_keys_NK_KEY_RIGHT as isize,
+    InsertMode = nk_keys_NK_KEY_TEXT_INSERT_MODE as isize,
+    ReplaceMode = nk_keys_NK_KEY_TEXT_REPLACE_MODE as isize,
+    ResetMode = nk_keys_NK_KEY_TEXT_RESET_MODE as isize,
+    LineStart = nk_keys_NK_KEY_TEXT_LINE_START as isize,
+    LineEnd = nk_keys_NK_KEY_TEXT_LINE_END as isize,
+    Start = nk_keys_NK_KEY_TEXT_START as isize,
+    End = nk_keys_NK_KEY_TEXT_END as isize,
+    TextUndo = nk_keys_NK_KEY_TEXT_UNDO as isize,
+    TextRedo = nk_keys_NK_KEY_TEXT_REDO as isize,
+    TextSelectAll = nk_keys_NK_KEY_TEXT_SELECT_ALL as isize,
+    TextWordLeft = nk_keys_NK_KEY_TEXT_WORD_LEFT as isize,
+    TextWordRight = nk_keys_NK_KEY_TEXT_WORD_RIGHT as isize,
+    ScrollStart = nk_keys_NK_KEY_SCROLL_START as isize,
+    ScrollEnd = nk_keys_NK_KEY_SCROLL_END as isize,
+    ScrollDown = nk_keys_NK_KEY_SCROLL_DOWN as isize,
+    ScrollUp = nk_keys_NK_KEY_SCROLL_UP as isize,
+}
+from_into_enum!(Key, nk_keys);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Button {
+    Left = nk_buttons_NK_BUTTON_LEFT as isize,
+    Middle = nk_buttons_NK_BUTTON_MIDDLE as isize,
+    Right = nk_buttons_NK_BUTTON_RIGHT as isize,
+    Double = nk_buttons_NK_BUTTON_DOUBLE as isize,
+    Max = nk_buttons_NK_BUTTON_MAX as isize,
+}
+from_into_enum!(Button, nk_buttons);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum AntiAliasing {
+    Off = nk_anti_aliasing_NK_ANTI_ALIASING_OFF as isize,
+    On = nk_anti_aliasing_NK_ANTI_ALIASING_ON as isize,
+}
+from_into_enum!(AntiAliasing, nk_anti_aliasing);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum DrawVertexLayoutFormat {
+    Char = nk_draw_vertex_layout_format_NK_FORMAT_SCHAR as isize,
+    Short = nk_draw_vertex_layout_format_NK_FORMAT_SSHORT as isize,
+    Int = nk_draw_vertex_layout_format_NK_FORMAT_SINT as isize,
+    Uchar = nk_draw_vertex_layout_format_NK_FORMAT_UCHAR as isize,
+    Ushort = nk_draw_vertex_layout_format_NK_FORMAT_USHORT as isize,
+    Uint = nk_draw_vertex_layout_format_NK_FORMAT_UINT as isize,
+    Float = nk_draw_vertex_layout_format_NK_FORMAT_FLOAT as isize,
+    Double = nk_draw_vertex_layout_format_NK_FORMAT_DOUBLE as isize,
+    R8G8B8 = nk_draw_vertex_layout_format_NK_FORMAT_R8G8B8 as isize,
+    R16G16B16 = nk_draw_vertex_layout_format_NK_FORMAT_R16G15B16 as isize,
+    R32G32B32 = nk_draw_vertex_layout_format_NK_FORMAT_R32G32B32 as isize,
+    R8G8B8A8 = nk_draw_vertex_layout_format_NK_FORMAT_R8G8B8A8 as isize,
+    B8G8R8A8 = nk_draw_vertex_layout_format_NK_FORMAT_B8G8R8A8 as isize,
+    R16G15B16A16 = nk_draw_vertex_layout_format_NK_FORMAT_R16G15B16A16 as isize,
+    R32G32B32A32 = nk_draw_vertex_layout_format_NK_FORMAT_R32G32B32A32 as isize,
+    R32G32B32A32Float = nk_draw_vertex_layout_format_NK_FORMAT_R32G32B32A32_FLOAT as isize,
+    R32G32B32A32Double = nk_draw_vertex_layout_format_NK_FORMAT_R32G32B32A32_DOUBLE as isize,
+    Rgb32 = nk_draw_vertex_layout_format_NK_FORMAT_RGB32 as isize,
+    Rgba32 = nk_draw_vertex_layout_format_NK_FORMAT_RGBA32 as isize,
+    Count = nk_draw_vertex_layout_format_NK_FORMAT_COUNT as isize,
+}
+from_into_enum!(DrawVertexLayoutFormat, nk_draw_vertex_layout_format);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum DrawVertexLayoutAttribute {
+    Position = nk_draw_vertex_layout_attribute_NK_VERTEX_POSITION as isize,
+    Color = nk_draw_vertex_layout_attribute_NK_VERTEX_COLOR as isize,
+    TexCoord = nk_draw_vertex_layout_attribute_NK_VERTEX_TEXCOORD as isize,
+    AttributeCount = nk_draw_vertex_layout_attribute_NK_VERTEX_ATTRIBUTE_COUNT as isize,
+}
+from_into_enum!(DrawVertexLayoutAttribute, nk_draw_vertex_layout_attribute);
+
+// ==========================================================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum FontAtlasFormat {
+    Alpha8 = nk_font_atlas_format_NK_FONT_ATLAS_ALPHA8 as isize,
+    Rgba32 = nk_font_atlas_format_NK_FONT_ATLAS_RGBA32 as isize,
+}
+from_into_enum!(FontAtlasFormat, nk_font_atlas_format);
 
 // ==========================================================================================================
 
@@ -336,7 +685,7 @@ enum HandleKind {
     Unknown,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 #[repr(C)]
 pub struct Handle {
     internal: nk_handle,
@@ -355,14 +704,14 @@ impl Default for Handle {
 impl Handle {
     pub fn id(&mut self) -> Option<i32> {
         match self.kind {
-            HandleKind::Id | HandleKind::Unknown => Some(unsafe { *(self.internal.id.as_ref()) }),
+            HandleKind::Id | HandleKind::Unknown => Some(unsafe { self.internal.id }),
             _ => None,
         }
     }
 
     pub fn ptr(&mut self) -> Option<*mut c_void> {
         match self.kind {
-            HandleKind::Ptr | HandleKind::Unknown => Some(unsafe { *(self.internal.ptr.as_mut()) }),
+            HandleKind::Ptr | HandleKind::Unknown => Some(unsafe { self.internal.ptr }),
             _ => None,
         }
     }
@@ -375,10 +724,7 @@ impl Handle {
     }
 
     pub unsafe fn from_ptr(value: *mut c_void) -> Handle {
-        Handle {
-            kind: HandleKind::Ptr,
-            internal: nk_handle_ptr(value),
-        }
+        Handle { kind: HandleKind::Ptr, internal: nk_handle_ptr(value) }
     }
 }
 
@@ -392,23 +738,23 @@ impl Input {
     }
 
     pub fn has_mouse_click(&self, b: Button) -> bool {
-        unsafe { nk_input_has_mouse_click(&self.internal, b) != 0 }
+        unsafe { nk_input_has_mouse_click(&self.internal, b.into()) != 0 }
     }
 
     pub fn has_mouse_click_in_rect(&self, b: Button, rect: Rect) -> bool {
-        unsafe { nk_input_has_mouse_click_in_rect(&self.internal, b, rect) != 0 }
+        unsafe { nk_input_has_mouse_click_in_rect(&self.internal, b.into(), rect) != 0 }
     }
 
     pub fn has_mouse_click_down_in_rect(&self, b: Button, rect: Rect, down: bool) -> bool {
-        unsafe { nk_input_has_mouse_click_down_in_rect(&self.internal, b, rect, if down { 1 } else { 0 }) != 0 }
+        unsafe { nk_input_has_mouse_click_down_in_rect(&self.internal, b.into(), rect, if down { 1 } else { 0 }) != 0 }
     }
 
     pub fn is_mouse_click_in_rect(&self, b: Button, rect: Rect) -> bool {
-        unsafe { nk_input_is_mouse_click_in_rect(&self.internal, b, rect) != 0 }
+        unsafe { nk_input_is_mouse_click_in_rect(&self.internal, b.into(), rect) != 0 }
     }
 
     pub fn is_mouse_click_down_in_rect(&self, b: Button, rect: Rect, down: bool) -> bool {
-        unsafe { nk_input_is_mouse_click_down_in_rect(&self.internal, b, rect, down as ::std::os::raw::c_int) != 0 }
+        unsafe { nk_input_is_mouse_click_down_in_rect(&self.internal, b.into(), rect, down as ::std::os::raw::c_int) != 0 }
     }
 
     pub fn any_mouse_click_in_rect(&self, rect: Rect) -> bool {
@@ -424,31 +770,31 @@ impl Input {
     }
 
     pub fn is_mouse_clicked(&self, b: Button, rect: Rect) -> bool {
-        unsafe { nk_input_mouse_clicked(&self.internal, b, rect) != 0 }
+        unsafe { nk_input_mouse_clicked(&self.internal, b.into(), rect) != 0 }
     }
 
     pub fn is_mouse_down(&self, b: Button) -> bool {
-        unsafe { nk_input_is_mouse_down(&self.internal, b) != 0 }
+        unsafe { nk_input_is_mouse_down(&self.internal, b.into()) != 0 }
     }
 
     pub fn is_mouse_pressed(&self, b: Button) -> bool {
-        unsafe { nk_input_is_mouse_pressed(&self.internal, b) != 0 }
+        unsafe { nk_input_is_mouse_pressed(&self.internal, b.into()) != 0 }
     }
 
     pub fn nk_input_is_mouse_released(&self, b: Button) -> bool {
-        unsafe { nk_input_is_mouse_released(&self.internal, b) != 0 }
+        unsafe { nk_input_is_mouse_released(&self.internal, b.into()) != 0 }
     }
 
     pub fn is_key_pressed(&self, k: Key) -> bool {
-        unsafe { nk_input_is_key_pressed(&self.internal, k) != 0 }
+        unsafe { nk_input_is_key_pressed(&self.internal, k.into()) != 0 }
     }
 
     pub fn is_key_released(&self, k: Key) -> bool {
-        unsafe { nk_input_is_key_released(&self.internal, k) != 0 }
+        unsafe { nk_input_is_key_released(&self.internal, k.into()) != 0 }
     }
 
     pub fn is_key_down(&self, k: Key) -> bool {
-        unsafe { nk_input_is_key_down(&self.internal, k) != 0 }
+        unsafe { nk_input_is_key_down(&self.internal, k.into()) != 0 }
     }
 }
 
@@ -507,8 +853,8 @@ impl Mouse {
         &self.internal.delta
     }
 
-    pub fn scroll_delta(&self) -> f32 {
-        self.internal.scroll_delta
+    pub fn scroll_delta(&self) -> &Vec2 {
+        &self.internal.scroll_delta
     }
 
     pub fn buttons(&self) -> [MouseButton; 3] {
@@ -538,11 +884,11 @@ wrapper_type!(Style, nk_style);
 
 impl Style {
     // ===== mut getters =====
-    
+
     pub fn window_mut(&mut self) -> &mut StyleWindow {
         unsafe { ::std::mem::transmute(&mut self.internal.window) }
     }
-    
+
     pub fn font_mut(&mut self) -> &mut UserFont {
         unsafe { ::std::mem::transmute(self.internal.font) }
     }
@@ -622,7 +968,7 @@ impl Style {
     pub fn combo_mut(&mut self) -> &mut StyleCombo {
         unsafe { ::std::mem::transmute(&mut self.internal.combo) }
     }
-    
+
     // ===== getters =====
 
     pub fn window(&self) -> &StyleWindow {
@@ -762,15 +1108,15 @@ impl StyleCombo {
     }
 
     pub fn sym_normal(&self) -> &SymbolType {
-        &self.internal.sym_normal
+        (&self.internal.sym_normal).into()
     }
 
     pub fn sym_hover(&self) -> &SymbolType {
-        &self.internal.sym_hover
+        (&self.internal.sym_hover).into()
     }
 
     pub fn sym_active(&self) -> &SymbolType {
-        &self.internal.sym_active
+        (&self.internal.sym_active).into()
     }
 
     pub fn border(&self) -> f32 {
@@ -840,15 +1186,15 @@ impl StyleCombo {
     }
 
     pub fn set_sym_normal(&mut self, t: SymbolType) {
-        self.internal.sym_normal = t
+        self.internal.sym_normal = t.into()
     }
 
     pub fn set_sym_hover(&mut self, t: SymbolType) {
-        self.internal.sym_hover = t
+        self.internal.sym_hover = t.into()
     }
 
     pub fn set_sym_active(&mut self, t: SymbolType) {
-        self.internal.sym_active = t
+        self.internal.sym_active = t.into()
     }
 
     pub fn set_border(&mut self, v: f32) {
@@ -908,11 +1254,11 @@ impl StyleTab {
     }
 
     pub fn sym_minimize(&self) -> &SymbolType {
-        &self.internal.sym_minimize
+        (&self.internal.sym_minimize).into()
     }
 
     pub fn sym_maximize(&self) -> &SymbolType {
-        &self.internal.sym_maximize
+        (&self.internal.sym_maximize).into()
     }
 
     pub fn border(&self) -> f32 {
@@ -966,11 +1312,11 @@ impl StyleTab {
     }
 
     pub fn set_sym_minimize(&mut self, t: SymbolType) {
-        self.internal.sym_minimize = t
+        self.internal.sym_minimize = t.into()
     }
 
     pub fn set_sym_maximize(&mut self, t: SymbolType) {
-        self.internal.sym_maximize = t
+        self.internal.sym_maximize = t.into()
     }
 
     pub fn set_border(&mut self, v: f32) {
@@ -1066,11 +1412,11 @@ impl StyleScrollbar {
     }
 
     pub fn inc_symbol(&self) -> &SymbolType {
-        &self.internal.inc_symbol
+        (&self.internal.inc_symbol).into()
     }
 
     pub fn dec_symbol(&self) -> &SymbolType {
-        &self.internal.dec_symbol
+        (&self.internal.dec_symbol).into()
     }
 
     // ===== setters =====
@@ -1140,11 +1486,11 @@ impl StyleScrollbar {
     }
 
     pub fn set_inc_symbol(&mut self, t: SymbolType) {
-        self.internal.inc_symbol = t
+        self.internal.inc_symbol = t.into()
     }
 
     pub fn set_dec_symbol(&mut self, t: SymbolType) {
-        self.internal.dec_symbol = t
+        self.internal.dec_symbol = t.into()
     }
 }
 
@@ -1432,11 +1778,11 @@ impl StyleProperty {
     }
 
     pub fn sym_left(&self) -> &SymbolType {
-        &self.internal.sym_left
+        (&self.internal.sym_left).into()
     }
 
     pub fn sym_right(&self) -> &SymbolType {
-        &self.internal.sym_right
+        (&self.internal.sym_right).into()
     }
 
     pub fn border(&self) -> f32 {
@@ -1494,11 +1840,11 @@ impl StyleProperty {
     }
 
     pub fn set_sym_left(&mut self, t: SymbolType) {
-        self.internal.sym_left = t
+        self.internal.sym_left = t.into()
     }
 
     pub fn set_sym_right(&mut self, t: SymbolType) {
-        self.internal.sym_right = t
+        self.internal.sym_right = t.into()
     }
 
     pub fn set_border(&mut self, v: f32) {
@@ -1724,11 +2070,11 @@ impl StyleSlider {
     }
 
     pub fn inc_symbol(&self) -> &SymbolType {
-        &self.internal.inc_symbol
+        (&self.internal.inc_symbol).into()
     }
 
     pub fn dec_symbol(&self) -> &SymbolType {
-        &self.internal.dec_symbol
+        (&self.internal.dec_symbol).into()
     }
 
     // ===== setters =====
@@ -1814,11 +2160,11 @@ impl StyleSlider {
     }
 
     pub fn set_inc_symbol(&mut self, t: SymbolType) {
-        self.internal.inc_symbol = t
+        self.internal.inc_symbol = t.into()
     }
 
     pub fn set_dec_symbol(&mut self, t: SymbolType) {
-        self.internal.dec_symbol = t
+        self.internal.dec_symbol = t.into()
     }
 }
 
@@ -2256,15 +2602,15 @@ impl StyleWindowHeader {
     }
 
     pub fn close_symbol(&self) -> &SymbolType {
-        &self.internal.close_symbol
+        (&self.internal.close_symbol).into()
     }
 
     pub fn minimize_symbol(&self) -> &SymbolType {
-        &self.internal.minimize_symbol
+        (&self.internal.minimize_symbol).into()
     }
 
     pub fn maximize_symbol(&self) -> &SymbolType {
-        &self.internal.maximize_symbol
+        (&self.internal.maximize_symbol).into()
     }
 
     pub fn label_normal(&self) -> &Color {
@@ -2310,15 +2656,15 @@ impl StyleWindowHeader {
     }
 
     pub fn set_close_symbol(&mut self, t: SymbolType) {
-        self.internal.close_symbol = t
+        self.internal.close_symbol = t.into()
     }
 
     pub fn set_minimize_symbol(&mut self, t: SymbolType) {
-        self.internal.minimize_symbol = t
+        self.internal.minimize_symbol = t.into()
     }
 
     pub fn set_maximize_symbol(&mut self, t: SymbolType) {
-        self.internal.maximize_symbol = t
+        self.internal.maximize_symbol = t.into()
     }
 
     pub fn set_label_normal(&mut self, c: Color) {
@@ -2599,7 +2945,7 @@ impl DrawList {
         }
     }
 
-    pub fn setup(&mut self, config: &ConvertConfig, cmds: &mut Buffer, vertices: &mut Buffer, elements: &mut Buffer) {
+    pub fn setup(&mut self, config: &ConvertConfig, cmds: &mut Buffer, vertices: &mut Buffer, elements: &mut Buffer, line_aa: AntiAliasing, shape_aa: AntiAliasing) {
         unsafe {
             nk_draw_list_setup(
                 &mut self.internal,
@@ -2607,13 +2953,9 @@ impl DrawList {
                 &mut cmds.internal as *mut nk_buffer,
                 &mut vertices.internal as *mut nk_buffer,
                 &mut elements.internal as *mut nk_buffer,
+                line_aa.into(),
+                shape_aa.into(),
             )
-        }
-    }
-
-    pub fn clear(&mut self) {
-        unsafe {
-            nk_draw_list_clear(&mut self.internal);
         }
     }
 
@@ -2703,7 +3045,7 @@ impl DrawList {
 
     pub fn stroke_poly_line(&mut self, points: &[Vec2], arg2: Color, arg3: DrawListStroke, thickness: f32, aa: AntiAliasing) {
         unsafe {
-            nk_draw_list_stroke_poly_line(&mut self.internal, points.as_ptr(), points.len() as u32, arg2, arg3, thickness, aa);
+            nk_draw_list_stroke_poly_line(&mut self.internal, points.as_ptr(), points.len() as u32, arg2, arg3, thickness, aa.into());
         }
     }
 
@@ -2733,7 +3075,7 @@ impl DrawList {
 
     pub fn fill_poly_convex(&mut self, points: &[Vec2], arg2: Color, arg3: AntiAliasing) {
         unsafe {
-            nk_draw_list_fill_poly_convex(&mut self.internal, points.as_ptr(), points.len() as u32, arg2, arg3);
+            nk_draw_list_fill_poly_convex(&mut self.internal, points.as_ptr(), points.len() as u32, arg2, arg3.into());
         }
     }
 
@@ -2829,9 +3171,7 @@ impl Allocator {
         a.internal.alloc = Some(alloc_heap::alloc);
         a.internal.free = Some(alloc_heap::free);
         a.internal.userdata = nk_handle::default();
-        unsafe {
-            *(a.internal.userdata.ptr.as_mut()) = ::std::ptr::null_mut();
-        }
+        a.internal.userdata.ptr = ::std::ptr::null_mut();
         a
     }
 
@@ -2841,9 +3181,7 @@ impl Allocator {
         a.internal.alloc = Some(alloc_vec::alloc);
         a.internal.free = Some(alloc_vec::free);
         a.internal.userdata = nk_handle::default();
-        unsafe {
-            *(a.internal.userdata.ptr.as_mut()) = ::std::ptr::null_mut();
-        }
+        a.internal.userdata.ptr = ::std::ptr::null_mut();
         a
     }
 }
@@ -2857,10 +3195,10 @@ impl ConvertConfig {
         self.internal.global_alpha = val;
     }
     pub fn set_line_aa(&mut self, val: AntiAliasing) {
-        self.internal.line_AA = val;
+        self.internal.line_AA = val.into();
     }
     pub fn set_shape_aa(&mut self, val: AntiAliasing) {
-        self.internal.shape_AA = val;
+        self.internal.shape_AA = val.into();
     }
     pub fn set_circle_segment_count(&mut self, val: u32) {
         self.internal.circle_segment_count = val;
@@ -2877,7 +3215,7 @@ impl ConvertConfig {
     pub fn set_vertex_layout(&mut self, val: &DrawVertexLayoutElements) {
         self.internal.vertex_layout = &val.arr.as_slice()[0];
     }
-    pub fn set_vertex_size(&mut self, val: usize) {
+    pub fn set_vertex_size(&mut self, val: Size) {
         self.internal.vertex_size = val;
     }
     // pub fn set_vertex_alignment(&mut self, val: usize) {
@@ -2893,9 +3231,9 @@ pub struct DrawVertexLayoutElements {
 }
 
 impl DrawVertexLayoutElements {
-    pub fn new(var: &[(DrawVertexLayoutAttribute, DrawVertexLayoutFormat, u32)]) -> DrawVertexLayoutElements {
+    pub fn new(var: &[(DrawVertexLayoutAttribute, DrawVertexLayoutFormat, Size)]) -> DrawVertexLayoutElements {
         DrawVertexLayoutElements {
-            arr: var.iter().map(|&(a, f, o)| nk_draw_vertex_layout_element { attribute: a, format: f, offset: o as usize }).collect::<Vec<_>>(),
+            arr: var.iter().map(|&(a, f, o)| nk_draw_vertex_layout_element { attribute: a.into(), format: f.into(), offset: o }).collect::<Vec<_>>(),
         }
     }
 }
@@ -2931,7 +3269,7 @@ impl Drop for TextEdit {
 }
 
 impl TextEdit {
-    pub fn init(&mut self, arg2: &mut Allocator, size: usize) {
+    pub fn init(&mut self, arg2: &mut Allocator, size: Size) {
         unsafe {
             nk_textedit_init(&mut self.internal, &mut arg2.internal as *mut nk_allocator, size);
         }
@@ -3075,7 +3413,7 @@ impl FontConfig {
     // }
 
     pub fn set_ttf<'a>(&'a mut self, font_bytes: &'a [u8]) {
-        self.internal.ttf_size = font_bytes.len();
+        self.internal.ttf_size = font_bytes.len() as Size;
         self.internal.ttf_blob = font_bytes as *const _ as *mut c_void;
     }
 
@@ -3146,7 +3484,7 @@ impl FontAtlas {
     pub fn add_font_with_bytes(&mut self, font_bytes: &[u8], font_size: f32) -> Option<FontID> {
         let mut cfg = FontConfig::with_size(font_size);
 
-        cfg.internal.ttf_size = font_bytes.len();
+        cfg.internal.ttf_size = font_bytes.len() as Size;
         cfg.internal.ttf_blob = font_bytes as *const _ as *mut c_void;
         cfg.internal.size = font_size;
         cfg.internal.ttf_data_owned_by_atlas = 1;
@@ -3158,16 +3496,17 @@ impl FontAtlas {
         let mut width: i32 = 0;
         let mut height: i32 = 0;
 
-        let image = unsafe { nk_font_atlas_bake(&mut self.internal as *mut nk_font_atlas, &mut width as *mut c_int, &mut height as *mut c_int, format) };
+        let image = unsafe { nk_font_atlas_bake(&mut self.internal as *mut nk_font_atlas, &mut width as *mut c_int, &mut height as *mut c_int, format.into()) };
 
         if width < 1 || height < 1 {
             return (&[], width as u32, height as u32);
         }
 
         let size = (match format {
-            FontAtlasFormat::NK_FONT_ATLAS_ALPHA8 => 1,
-            FontAtlasFormat::NK_FONT_ATLAS_RGBA32 => 4,
-        } * width * height) as usize;
+            FontAtlasFormat::Alpha8 => 1,
+            FontAtlasFormat::Rgba32 => 4,
+        } * width
+            * height) as usize;
 
         (unsafe { ::std::slice::from_raw_parts(image as *const u8, size) }, width as u32, height as u32)
     }
@@ -3307,7 +3646,7 @@ impl Buffer {
     pub fn with_size(alloc: &mut Allocator, buffer_size: usize) -> Buffer {
         let mut a = Buffer::default();
         unsafe {
-            nk_buffer_init(&mut a.internal as *mut nk_buffer, &mut alloc.internal as *const nk_allocator, buffer_size);
+            nk_buffer_init(&mut a.internal as *mut nk_buffer, &mut alloc.internal as *const nk_allocator, buffer_size as Size);
         }
         a
     }
@@ -3315,13 +3654,13 @@ impl Buffer {
     pub fn with_fixed(memory: &mut [u8]) -> Buffer {
         let mut a = Buffer::default();
         unsafe {
-            nk_buffer_init_fixed(&mut a.internal as *mut nk_buffer, memory as *mut _ as *mut ::std::os::raw::c_void, memory.len());
+            nk_buffer_init_fixed(&mut a.internal as *mut nk_buffer, memory as *mut _ as *mut ::std::os::raw::c_void, memory.len() as Size);
         }
         a
     }
 
     pub fn total(&mut self) -> usize {
-        unsafe { nk_buffer_total(&mut self.internal as *mut nk_buffer) }
+        unsafe { nk_buffer_total(&mut self.internal as *mut nk_buffer) as usize }
     }
 
     pub fn info(&mut self) -> (usize, usize, usize, usize) /*size, allocated, needed, calls*/ {
@@ -3329,7 +3668,7 @@ impl Buffer {
         unsafe {
             nk_buffer_info(&mut s, &mut self.internal as *mut nk_buffer);
         }
-        (s.size, s.allocated, s.needed, s.calls)
+        (s.size as usize, s.allocated as usize, s.needed as usize, s.calls as usize)
     }
 
     // pub fn nk_buffer_push(arg1: *mut nk_buffer,
@@ -3398,7 +3737,7 @@ impl Context {
     pub fn draw_list_mut(&mut self) -> &mut DrawList {
         unsafe { ::std::mem::transmute(&mut self.internal.draw_list) }
     }
-    
+
     pub fn input(&self) -> &Input {
         unsafe { ::std::mem::transmute(&self.internal.input) }
     }
@@ -3431,8 +3770,8 @@ impl Context {
         }
     }
 
-    pub fn window_find(&self, name: String) -> Option<&Window> {
-        let w = unsafe { nk_window_find(&self.internal as *const _ as *mut nk_context, name.as_ptr()) };
+    pub fn window_find<S: AsRef<str>>(&self, name: S) -> Option<&Window> {
+        let w = unsafe { nk_window_find(&self.internal as *const _ as *mut nk_context, name.as_ref().as_ptr() as *const i8) };
 
         unsafe {
             if w.is_null() {
@@ -3539,7 +3878,7 @@ impl Context {
     }
 
     pub fn window_is_collapsed(&self, name: String) -> bool {
-        unsafe { nk_window_is_collapsed(&self.internal as *const _  as *mut nk_context, name.as_ptr()) > 0 }
+        unsafe { nk_window_is_collapsed(&self.internal as *const _ as *mut nk_context, name.as_ptr()) > 0 }
     }
 
     pub fn window_is_closed(&self, name: String) -> bool {
@@ -3566,21 +3905,21 @@ impl Context {
         unsafe { nk_item_is_any_active(&self.internal as *const _ as *mut nk_context) > 0 }
     }
 
-    pub fn window_set_bounds(&mut self, bounds: Rect) {
+    pub fn window_set_bounds<S: AsRef<str>>(&mut self, name: S, bounds: Rect) {
         unsafe {
-            nk_window_set_bounds(&mut self.internal as *mut nk_context, bounds);
+            nk_window_set_bounds(&mut self.internal as *mut nk_context, name.as_ref().as_ptr() as *const i8, bounds);
         }
     }
 
-    pub fn window_set_position(&mut self, pos: Vec2) {
+    pub fn window_set_position<S: AsRef<str>>(&mut self, name: S, pos: Vec2) {
         unsafe {
-            nk_window_set_position(&mut self.internal as *mut nk_context, pos);
+            nk_window_set_position(&mut self.internal as *mut nk_context, name.as_ref().as_ptr() as *const i8, pos);
         }
     }
 
-    pub fn window_set_size(&mut self, size: Vec2) {
+    pub fn window_set_size<S: AsRef<str>>(&mut self, name: S, size: Vec2) {
         unsafe {
-            nk_window_set_size(&mut self.internal as *mut nk_context, size);
+            nk_window_set_size(&mut self.internal as *mut nk_context, name.as_ref().as_ptr() as *const i8, size);
         }
     }
 
@@ -3598,25 +3937,25 @@ impl Context {
 
     pub fn window_collapse(&mut self, name: String, state: CollapseState) {
         unsafe {
-            nk_window_collapse(&mut self.internal as *mut nk_context, name.as_ptr(), state);
+            nk_window_collapse(&mut self.internal as *mut nk_context, name.as_ptr(), state.into());
         }
     }
 
     pub fn window_collapse_if(&mut self, name: String, state: CollapseState, cond: bool) {
         unsafe {
-            nk_window_collapse_if(&mut self.internal as *mut nk_context, name.as_ptr(), state, if cond { 1 } else { 0 });
+            nk_window_collapse_if(&mut self.internal as *mut nk_context, name.as_ptr(), state.into(), if cond { 1 } else { 0 });
         }
     }
 
     pub fn window_show(&mut self, name: String, state: ShowState) {
         unsafe {
-            nk_window_show(&mut self.internal as *mut nk_context, name.as_ptr(), state);
+            nk_window_show(&mut self.internal as *mut nk_context, name.as_ptr(), state.into());
         }
     }
 
     pub fn window_show_if(&mut self, name: String, state: ShowState, cond: bool) {
         unsafe {
-            nk_window_show_if(&mut self.internal as *mut nk_context, name.as_ptr(), state, if cond { 1 } else { 0 });
+            nk_window_show_if(&mut self.internal as *mut nk_context, name.as_ptr(), state.into(), if cond { 1 } else { 0 });
         }
     }
 
@@ -3634,7 +3973,7 @@ impl Context {
 
     pub fn layout_row_begin(&mut self, fmt: LayoutFormat, row_height: f32, cols: i32) {
         unsafe {
-            nk_layout_row_begin(&mut self.internal as *mut nk_context, fmt, row_height, cols);
+            nk_layout_row_begin(&mut self.internal as *mut nk_context, fmt.into(), row_height, cols);
         }
     }
 
@@ -3652,13 +3991,13 @@ impl Context {
 
     pub fn layout_row(&mut self, fmt: LayoutFormat, height: f32, cols_ratio: &[f32]) {
         unsafe {
-            nk_layout_row(&mut self.internal as *mut nk_context, fmt, height, cols_ratio.len() as i32, cols_ratio.as_ptr());
+            nk_layout_row(&mut self.internal as *mut nk_context, fmt.into(), height, cols_ratio.len() as i32, cols_ratio.as_ptr());
         }
     }
 
     pub fn layout_space_begin(&mut self, fmt: LayoutFormat, height: f32, widget_count: i32) {
         unsafe {
-            nk_layout_space_begin(&mut self.internal as *mut nk_context, fmt, height, widget_count);
+            nk_layout_space_begin(&mut self.internal as *mut nk_context, fmt.into(), height, widget_count);
         }
     }
 
@@ -3709,11 +4048,11 @@ impl Context {
     }
 
     pub fn tree_push_hashed(&mut self, ty: TreeType, title: String, initial_state: CollapseState, hash: String, len: i32, seed: i32) -> i32 {
-        unsafe { nk_tree_push_hashed(&mut self.internal as *mut nk_context, ty, title.as_ptr(), initial_state, hash.as_ptr(), len, seed) }
+        unsafe { nk_tree_push_hashed(&mut self.internal as *mut nk_context, ty.into(), title.as_ptr(), initial_state.into(), hash.as_ptr(), len, seed) }
     }
 
     pub fn tree_image_push_hashed(&mut self, ty: TreeType, i: Image, title: String, initial_state: CollapseState, hash: String, len: i32, seed: i32) -> i32 {
-        unsafe { nk_tree_image_push_hashed(&mut self.internal as *mut nk_context, ty, i.internal, title.as_ptr(), initial_state, hash.as_ptr(), len, seed) }
+        unsafe { nk_tree_image_push_hashed(&mut self.internal as *mut nk_context, ty.into(), i.internal, title.as_ptr(), initial_state.into(), hash.as_ptr(), len, seed) }
     }
 
     pub fn tree_pop(&mut self) {
@@ -3789,7 +4128,7 @@ impl Context {
     }
 
     pub fn button_symbol(&mut self, ty: SymbolType) -> bool {
-        unsafe { nk_button_symbol(&mut self.internal as *mut nk_context, ty) != 0 }
+        unsafe { nk_button_symbol(&mut self.internal as *mut nk_context, ty.into()) != 0 }
     }
 
     pub fn button_image(&mut self, img: Image) -> bool {
@@ -3797,11 +4136,11 @@ impl Context {
     }
 
     pub fn button_symbol_label(&mut self, ty: SymbolType, title: String, text_alignment: Flags) -> bool {
-        unsafe { nk_button_symbol_label(&mut self.internal as *mut nk_context, ty, title.as_ptr(), text_alignment) != 0 }
+        unsafe { nk_button_symbol_label(&mut self.internal as *mut nk_context, ty.into(), title.as_ptr(), text_alignment) != 0 }
     }
 
     pub fn button_symbol_text(&mut self, ty: SymbolType, title: &str, text_alignment: Flags) -> bool {
-        unsafe { nk_button_symbol_text(&mut self.internal as *mut nk_context, ty, title.as_ptr() as *const i8, title.as_bytes().len() as i32, text_alignment) != 0 }
+        unsafe { nk_button_symbol_text(&mut self.internal as *mut nk_context, ty.into(), title.as_ptr() as *const i8, title.as_bytes().len() as i32, text_alignment) != 0 }
     }
 
     pub fn button_image_label(&mut self, img: Image, title: String, text_alignment: Flags) -> bool {
@@ -3814,12 +4153,12 @@ impl Context {
 
     pub fn button_set_behavior(&mut self, b: ButtonBehavior) {
         unsafe {
-            nk_button_set_behavior(&mut self.internal as *mut nk_context, b);
+            nk_button_set_behavior(&mut self.internal as *mut nk_context, b.into());
         }
     }
 
     pub fn button_push_behavior(&mut self, b: ButtonBehavior) -> i32 {
-        unsafe { nk_button_push_behavior(&mut self.internal as *mut nk_context, b) }
+        unsafe { nk_button_push_behavior(&mut self.internal as *mut nk_context, b.into()) }
     }
 
     pub fn button_pop_behavior(&mut self) -> i32 {
@@ -3938,21 +4277,21 @@ impl Context {
         unsafe { nk_slider_int(&mut self.internal as *mut nk_context, min, val, max, step) != 0 }
     }
 
-    pub fn progress(&mut self, cur: &mut usize, max: usize, is_modifyable: bool) -> bool {
+    pub fn progress(&mut self, cur: &mut Size, max: Size, is_modifyable: bool) -> bool {
         unsafe { nk_progress(&mut self.internal as *mut nk_context, cur, max, if is_modifyable { 1 } else { 0 }) != 0 }
     }
 
-    pub fn prog(&mut self, cur: usize, max: usize, is_modifyable: bool) -> usize {
-        unsafe { nk_prog(&mut self.internal as *mut nk_context, cur, max, if is_modifyable { 1 } else { 0 }) }
+    pub fn prog(&mut self, cur: Size, max: Size, is_modifyable: bool) -> usize {
+        unsafe { nk_prog(&mut self.internal as *mut nk_context, cur, max, if is_modifyable { 1 } else { 0 }) as usize }
     }
 
-    pub fn color_picker(&mut self, color: Color, fmt: ColorFormat) -> Color {
-        unsafe { nk_color_picker(&mut self.internal as *mut nk_context, color, fmt) }
+    pub fn color_picker(&mut self, color: ColorF, fmt: ColorFormat) -> ColorF {
+        unsafe { nk_color_picker(&mut self.internal as *mut nk_context, color, fmt.into()) }
     }
 
-    pub fn color_pick(&mut self, fmt: ColorFormat) -> (bool, Color) {
-        let mut c = Color::default();
-        let changed = unsafe { nk_color_pick(&mut self.internal as *mut nk_context, &mut c as *mut nk_color, fmt) };
+    pub fn color_pick(&mut self, fmt: ColorFormat) -> (bool, ColorF) {
+        let mut c = ColorF::default();
+        let changed = unsafe { nk_color_pick(&mut self.internal as *mut nk_context, &mut c as *mut nk_colorf, fmt.into()) };
         (changed != 0, c)
     }
 
@@ -3998,22 +4337,22 @@ impl Context {
     }
 
     pub fn chart_begin(&mut self, ty: ChartType, num: i32, min: f32, max: f32) -> bool {
-        unsafe { nk_chart_begin(&mut self.internal as *mut nk_context, ty, num, min, max) > 0 }
+        unsafe { nk_chart_begin(&mut self.internal as *mut nk_context, ty.into(), num, min, max) > 0 }
     }
 
     pub fn chart_begin_colored(&mut self, ty: ChartType, color: Color, active: Color, num: i32, min: f32, max: f32) -> bool {
-        unsafe { nk_chart_begin_colored(&mut self.internal as *mut nk_context, ty, color, active, num, min, max) > 0 }
+        unsafe { nk_chart_begin_colored(&mut self.internal as *mut nk_context, ty.into(), color, active, num, min, max) > 0 }
     }
 
     pub fn chart_add_slot(&mut self, ty: ChartType, count: i32, min_value: f32, max_value: f32) {
         unsafe {
-            nk_chart_add_slot(&mut self.internal as *mut nk_context, ty, count, min_value, max_value);
+            nk_chart_add_slot(&mut self.internal as *mut nk_context, ty.into(), count, min_value, max_value);
         }
     }
 
     pub fn chart_add_slot_colored(&mut self, ty: ChartType, color: Color, active: Color, count: i32, min_value: f32, max_value: f32) {
         unsafe {
-            nk_chart_add_slot_colored(&mut self.internal as *mut nk_context, ty, color, active, count, min_value, max_value);
+            nk_chart_add_slot_colored(&mut self.internal as *mut nk_context, ty.into(), color, active, count, min_value, max_value);
         }
     }
 
@@ -4033,7 +4372,7 @@ impl Context {
 
     pub fn plot(&mut self, ty: ChartType, values: &[f32]) {
         unsafe {
-            nk_plot(&mut self.internal as *mut nk_context, ty, values.as_ptr(), values.len() as i32, 0);
+            nk_plot(&mut self.internal as *mut nk_context, ty.into(), values.as_ptr(), values.len() as i32, 0);
         }
     }
 
@@ -4044,7 +4383,7 @@ impl Context {
     // }
 
     pub fn popup_begin(&mut self, ty: PopupType, title: String, flags: Flags, bounds: Rect) -> bool {
-        unsafe { nk_popup_begin(&mut self.internal as *mut nk_context, ty, title.as_ptr(), flags, bounds) > 0 }
+        unsafe { nk_popup_begin(&mut self.internal as *mut nk_context, ty.into(), title.as_ptr(), flags, bounds) > 0 }
     }
 
     pub fn popup_close(&mut self) {
@@ -4081,15 +4420,15 @@ impl Context {
     }
 
     pub fn combo_begin_symbol(&mut self, sym: SymbolType, size: Vec2) -> bool {
-        unsafe { nk_combo_begin_symbol(&mut self.internal as *mut nk_context, sym, size) > 0 }
+        unsafe { nk_combo_begin_symbol(&mut self.internal as *mut nk_context, sym.into(), size) > 0 }
     }
 
     pub fn combo_begin_symbol_label(&mut self, label: String, sym: SymbolType, size: Vec2) -> bool {
-        unsafe { nk_combo_begin_symbol_label(&mut self.internal as *mut nk_context, label.as_ptr(), sym, size) > 0 }
+        unsafe { nk_combo_begin_symbol_label(&mut self.internal as *mut nk_context, label.as_ptr(), sym.into(), size) > 0 }
     }
 
     pub fn combo_begin_symbol_text(&mut self, label: &str, sym: SymbolType, size: Vec2) -> bool {
-        unsafe { nk_combo_begin_symbol_text(&mut self.internal as *mut nk_context, label.as_ptr() as *const i8, label.as_bytes().len() as i32, sym, size) > 0 }
+        unsafe { nk_combo_begin_symbol_text(&mut self.internal as *mut nk_context, label.as_ptr() as *const i8, label.as_bytes().len() as i32, sym.into(), size) > 0 }
     }
 
     pub fn combo_begin_image(&mut self, img: Image, size: Vec2) -> bool {
@@ -4121,11 +4460,11 @@ impl Context {
     }
 
     pub fn combo_item_symbol_label(&mut self, sym: SymbolType, label: String, alignment: Flags) -> bool {
-        unsafe { nk_combo_item_symbol_label(&mut self.internal as *mut nk_context, sym, label.as_ptr(), alignment) > 0 }
+        unsafe { nk_combo_item_symbol_label(&mut self.internal as *mut nk_context, sym.into(), label.as_ptr(), alignment) > 0 }
     }
 
     pub fn combo_item_symbol_text(&mut self, sym: SymbolType, label: &str, alignment: Flags) -> bool {
-        unsafe { nk_combo_item_symbol_text(&mut self.internal as *mut nk_context, sym, label.as_ptr() as *const i8, label.as_bytes().len() as i32, alignment) > 0 }
+        unsafe { nk_combo_item_symbol_text(&mut self.internal as *mut nk_context, sym.into(), label.as_ptr() as *const i8, label.as_bytes().len() as i32, alignment) > 0 }
     }
 
     pub fn combo_close(&mut self) {
@@ -4161,11 +4500,11 @@ impl Context {
     }
 
     pub fn contextual_item_symbol_label(&mut self, sym: SymbolType, label: String, align: Flags) -> bool {
-        unsafe { nk_contextual_item_symbol_label(&mut self.internal as *mut nk_context, sym, label.as_ptr(), align) > 0 }
+        unsafe { nk_contextual_item_symbol_label(&mut self.internal as *mut nk_context, sym.into(), label.as_ptr(), align) > 0 }
     }
 
     pub fn contextual_item_symbol_text(&mut self, sym: SymbolType, label: &str, align: Flags) -> bool {
-        unsafe { nk_contextual_item_symbol_text(&mut self.internal as *mut nk_context, sym, label.as_ptr() as *const i8, label.as_bytes().len() as i32, align) > 0 }
+        unsafe { nk_contextual_item_symbol_text(&mut self.internal as *mut nk_context, sym.into(), label.as_ptr() as *const i8, label.as_bytes().len() as i32, align) > 0 }
     }
 
     pub fn contextual_close(&mut self) {
@@ -4229,15 +4568,15 @@ impl Context {
     }
 
     pub fn menu_begin_symbol(&mut self, title: String, sym: SymbolType, size: Vec2) -> bool {
-        unsafe { nk_menu_begin_symbol(&mut self.internal as *mut nk_context, title.as_ptr(), sym, size) > 0 }
+        unsafe { nk_menu_begin_symbol(&mut self.internal as *mut nk_context, title.as_ptr(), sym.into(), size) > 0 }
     }
 
     pub fn menu_begin_symbol_label(&mut self, title: String, align: Flags, sym: SymbolType, size: Vec2) -> bool {
-        unsafe { nk_menu_begin_symbol_label(&mut self.internal as *mut nk_context, title.as_ptr(), align, sym, size) > 0 }
+        unsafe { nk_menu_begin_symbol_label(&mut self.internal as *mut nk_context, title.as_ptr(), align, sym.into(), size) > 0 }
     }
 
     pub fn menu_begin_symbol_text(&mut self, title: &str, align: Flags, sym: SymbolType, size: Vec2) -> bool {
-        unsafe { nk_menu_begin_symbol_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.len() as i32, align, sym, size) > 0 }
+        unsafe { nk_menu_begin_symbol_text(&mut self.internal as *mut nk_context, title.as_ptr() as *const i8, title.len() as i32, align, sym.into(), size) > 0 }
     }
 
     pub fn menu_item_label(&mut self, title: String, align: Flags) -> bool {
@@ -4257,11 +4596,11 @@ impl Context {
     }
 
     pub fn menu_item_symbol_label(&mut self, sym: SymbolType, title: String, align: Flags) -> bool {
-        unsafe { nk_menu_item_symbol_label(&mut self.internal as *mut nk_context, sym, title.as_ptr(), align) > 0 }
+        unsafe { nk_menu_item_symbol_label(&mut self.internal as *mut nk_context, sym.into(), title.as_ptr(), align) > 0 }
     }
 
     pub fn menu_item_symbol_text(&mut self, sym: SymbolType, title: &str, align: Flags) -> bool {
-        unsafe { nk_menu_item_symbol_text(&mut self.internal as *mut nk_context, sym, title.as_ptr() as *const i8, title.len() as i32, align) > 0 }
+        unsafe { nk_menu_item_symbol_text(&mut self.internal as *mut nk_context, sym.into(), title.as_ptr() as *const i8, title.len() as i32, align) > 0 }
     }
 
     pub fn menu_close(&mut self) {
@@ -4302,17 +4641,17 @@ impl Context {
 
     pub fn input_key(&mut self, key: Key, down: bool) {
         unsafe {
-            nk_input_key(&mut self.internal as *mut nk_context, key, if down { 1 } else { 0 });
+            nk_input_key(&mut self.internal as *mut nk_context, key.into(), if down { 1 } else { 0 });
         }
     }
 
     pub fn input_button(&mut self, b: Button, x: i32, y: i32, down: bool) {
         unsafe {
-            nk_input_button(&mut self.internal as *mut nk_context, b, x, y, if down { 1 } else { 0 });
+            nk_input_button(&mut self.internal as *mut nk_context, b.into(), x, y, if down { 1 } else { 0 });
         }
     }
 
-    pub fn input_scroll(&mut self, y: f32) {
+    pub fn input_scroll(&mut self, y: Vec2) {
         unsafe {
             nk_input_scroll(&mut self.internal as *mut nk_context, y);
         }
@@ -4460,11 +4799,11 @@ impl Context {
     }
 
     pub fn widget_is_mouse_clicked(&mut self, b: Button) -> bool {
-        unsafe { nk_widget_is_mouse_clicked(&mut self.internal as *mut nk_context, b) > 0 }
+        unsafe { nk_widget_is_mouse_clicked(&mut self.internal as *mut nk_context, b.into()) > 0 }
     }
 
     pub fn widget_has_mouse_click_down(&mut self, b: Button, down: bool) -> bool {
-        unsafe { nk_widget_has_mouse_click_down(&mut self.internal as *mut nk_context, b, if down { 1 } else { 0 }) > 0 }
+        unsafe { nk_widget_has_mouse_click_down(&mut self.internal as *mut nk_context, b.into(), if down { 1 } else { 0 }) > 0 }
     }
 
     pub fn widget(&self, arg1: &mut Rect) -> WidgetLayoutState {
@@ -4655,9 +4994,6 @@ impl Window {
     }
     pub fn tables(&self) -> &[Table] {
         unsafe { ::std::slice::from_raw_parts(self.internal.tables as *mut _ as *const Table, self.internal.table_count as usize) }
-    }
-    pub fn table_size(&self) -> u16 {
-        self.internal.table_size
     }
     pub fn prev(&self) -> &Window {
         unsafe { ::std::mem::transmute(self.internal.prev) }
@@ -4899,14 +5235,6 @@ impl Panel {
 
     pub fn chart(&self) -> &Chart {
         unsafe { ::std::mem::transmute(&self.internal.chart) }
-    }
-
-    pub fn popup_buffer(&self) -> &PopupBuffer {
-        &self.internal.popup_buffer
-    }
-
-    pub fn popup_buffer_mut(&mut self) -> &mut PopupBuffer {
-        &mut self.internal.popup_buffer
     }
 
     pub fn buffer(&self) -> Option<&CommandBuffer> {
@@ -5558,11 +5886,11 @@ impl Image {
     }
 
     pub fn id(&mut self) -> i32 {
-        unsafe { *(self.internal.handle.id.as_ref()) }
+        unsafe { self.internal.handle.id }
     }
 
     pub fn ptr(&mut self) -> *mut c_void {
-        unsafe { *(self.internal.handle.ptr.as_mut()) }
+        unsafe { self.internal.handle.ptr }
     }
 }
 
@@ -5629,11 +5957,11 @@ wrapper_type!(UserFont, nk_user_font);
 
 impl UserFont {
     pub unsafe fn userdata_ptr(&self) -> Handle {
-        Handle::from_ptr(*self.internal.userdata.ptr.as_ref())
+        Handle::from_ptr(self.internal.userdata.ptr)
     }
 
     pub unsafe fn userdata_id(&self) -> Handle {
-        Handle::from_id(*self.internal.userdata.id.as_ref())
+        Handle::from_id(self.internal.userdata.id)
     }
 }
 

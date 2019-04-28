@@ -14,9 +14,9 @@ pub unsafe extern "C" fn alloc(_: nk_handle, _: *mut c_void, size: nk_size) -> *
     trace!("allocating {} bytes", size);
 
     let size_size = mem::size_of::<nk_size>();
-    let size = size + size_size;
+    let size = size + size_size as nk_size;
 
-    let memory = Global.alloc(Layout::from_size_align(size, ALIGNMENT).unwrap()).unwrap();
+    let memory = Global.alloc(Layout::from_size_align(size as usize, ALIGNMENT).unwrap()).unwrap();
     trace!("allocating {} / {} bytes", size_size, size);
 
     *(memory.as_ptr() as *mut nk_size) = size;
@@ -37,5 +37,5 @@ pub unsafe extern "C" fn free(_: nk_handle, old: *mut c_void) {
 
     trace!("deallocating {} bytes from {:p}", old_size, old);
 
-    Global.dealloc(NonNull::new(old).unwrap(), Layout::from_size_align(old_size, ALIGNMENT).unwrap());
+    Global.dealloc(NonNull::new(old).unwrap(), Layout::from_size_align(old_size as usize, ALIGNMENT).unwrap());
 }
