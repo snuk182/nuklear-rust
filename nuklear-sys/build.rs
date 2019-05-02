@@ -14,6 +14,6 @@ fn main() {
         .file("nuklear-c/bind.c")
         //.flag("-Wno-unused-parameter")
         //.flag("-Wno-implicit-fallthrough")
-        .flag("-Wno-unused-but-set-variable")
+        //.flag("-Wno-unused-but-set-variable")
         .compile("libnuklear");
 }
