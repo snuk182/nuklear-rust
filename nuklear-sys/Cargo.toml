@@ -1,6 +1,7 @@
 [package]
 name = "nuklear-sys"
-version = "4.0.2"
+#version = "4.0.2" #version of nuklear.h
+version = "4.0.3"
 authors = ["Serhii Plyhun <snuk188@gmail.com>"]
 description = "Raw bindings to Nuklear 2D GUI library"
 homepage = "https://github.com/snuk182/nuklear-rust"
