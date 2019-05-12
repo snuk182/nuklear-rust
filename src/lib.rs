@@ -48,7 +48,9 @@ pub use nuklear_sys::nk_vec2i as Vec2i;
 
 pub use nuklear_sys::nk_glyph as Glyph;
 
+pub use nuklear_sys::nk_plugin_copy as PluginCopy;
 pub use nuklear_sys::nk_plugin_filter as PluginFilter;
+pub use nuklear_sys::nk_plugin_paste as PluginPaste;
 
 pub const NK_FILTER_DEFAULT: PluginFilter = Some(nk_filter_default);
 pub const NK_FILTER_ASCII: PluginFilter = Some(nk_filter_ascii);
@@ -752,6 +754,49 @@ impl Handle {
 
     pub unsafe fn from_ptr(value: *mut c_void) -> Handle {
         Handle { kind: HandleKind::Ptr, internal: nk_handle_ptr(value) }
+    }
+}
+
+// ==================================================================================
+
+/*
+wrapper_type!(ConfigurationStacks, nk_configuration_stacks);
+
+impl ConfigurationStacks {
+    pub style_items: nk_config_stack_style_item,
+    pub floats: nk_config_stack_float,
+    pub vectors: nk_config_stack_vec2,
+    pub flags: nk_config_stack_flags,
+    pub colors: nk_config_stack_color,
+    pub fonts: nk_config_stack_user_font,
+    pub button_behaviors: nk_config_stack_button_behavior,
+
+}
+*/
+
+// ==================================================================================
+
+wrapper_type!(Clipboard, nk_clipboard);
+
+impl Clipboard {
+    pub unsafe fn userdata_ptr(&self) -> Handle {
+        Handle::from_ptr(self.internal.userdata.ptr)
+    }
+    pub unsafe fn userdata_id(&self) -> Handle {
+        Handle::from_id(self.internal.userdata.id)
+    }
+
+    pub fn paste(&self) -> PluginPaste {
+        self.internal.paste
+    }
+    pub fn set_paste(&mut self, plug: PluginPaste) {
+        self.internal.paste = plug;
+    }
+    pub fn copy(&self) -> PluginCopy {
+        self.internal.copy
+    }
+    pub fn set_copy(&mut self, plug: PluginCopy) {
+        self.internal.copy = plug;
     }
 }
 
@@ -3751,6 +3796,30 @@ impl Context {
         }
 
         a
+    }
+
+    pub fn clip_mut(&mut self) -> &mut Clipboard {
+        unsafe { ::std::mem::transmute(&mut self.internal.clip) }
+    }
+
+    pub fn clip(&self) -> &Clipboard {
+        unsafe { ::std::mem::transmute(&self.internal.clip) }
+    }
+
+    pub fn last_widget_state(&self) -> Flags {
+        self.internal.last_widget_state
+    }
+
+    pub fn delta_time_seconds(&self) -> f32 {
+        self.internal.delta_time_seconds
+    }
+
+    pub fn button_behavior(&self) -> ButtonBehavior {
+        self.internal.button_behavior.into()
+    }
+
+    pub fn set_button_behavior(&mut self, bb: ButtonBehavior) {
+        self.internal.button_behavior = bb.into()
     }
 
     pub fn input_mut(&mut self) -> &mut Input {
