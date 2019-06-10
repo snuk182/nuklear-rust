@@ -658,10 +658,10 @@ impl<'a> From<::std::string::String> for String<'a> {
 macro_rules! nk_string {
     ($e:tt) => ({
         let value = concat!($e, "\0");
-        unsafe { ::nuklear::String::from_bytes_unchecked(value.as_bytes()) }
+        unsafe { $crate::String::from_bytes_unchecked(value.as_bytes()) }
     });
     ($e:tt, $($arg:tt)*) => ({
-        ::nuklear::String::from(format!($e, $($arg)*))
+        $crate::String::from(format!($e, $($arg)*))
     })
 }
 
