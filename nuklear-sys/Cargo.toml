@@ -9,13 +9,14 @@ repository = "https://github.com/snuk182/nuklear-rust"
 license = "MIT OR Apache-2.0"
 build = "build.rs"
 links = "nuklear"
+edition = "2018"
 
 [lib]
 name = "nuklear_sys"
 path = "src/lib.rs"
 
 [dependencies]
-libc = "~0.2"
+libc = "^0.2.76"
 
 [build-dependencies]
-cc = "~1.0"
+cc = "^1.0.59"
