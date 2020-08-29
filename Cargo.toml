@@ -24,3 +24,5 @@ rust_allocator = []
 [dependencies.nuklear-sys]
 path = "nuklear-sys"
 version = "^4.0.5"
+
+[workspace]
