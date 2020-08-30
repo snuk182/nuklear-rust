@@ -11,46 +11,43 @@
 #[macro_use]
 extern crate log;
 
-#[cfg(feature = "rust_allocator")]
-mod alloc_heap;
-mod alloc_vec;
-
 use std::borrow::Cow;
 use std::default::Default;
 use std::os::raw::*;
 
 use nuklear_sys::*;
-
 pub use nuklear_sys;
 pub use nuklear_sys::nk_allocation_type as AllocationType;
-pub use nuklear_sys::nk_draw_list_stroke as DrawListStroke;
-pub use nuklear_sys::nk_flags as Flags; //TODO
-pub use nuklear_sys::nk_font_coord_type as FontCoordType;
-pub use nuklear_sys::nk_panel_row_layout_type as PanelRowLayoutType;
-pub use nuklear_sys::nk_panel_type as PanelType;
-pub use nuklear_sys::nk_style_colors as StyleColor;
-pub use nuklear_sys::nk_style_cursor as StyleCursor;
-pub use nuklear_sys::nk_style_header_align as StyleHeaderAlign;
-pub use nuklear_sys::nk_widget_layout_states as WidgetLayoutState;
-
 pub use nuklear_sys::nk_chart_slot as ChartSlot;
 pub use nuklear_sys::nk_color as Color;
 pub use nuklear_sys::nk_colorf as ColorF;
+pub use nuklear_sys::nk_draw_list_stroke as DrawListStroke;
+pub use nuklear_sys::nk_flags as Flags;
+//TODO
+pub use nuklear_sys::nk_font_coord_type as FontCoordType;
+pub use nuklear_sys::nk_glyph as Glyph;
 pub use nuklear_sys::nk_menu_state as MenuState;
+pub use nuklear_sys::nk_panel_row_layout_type as PanelRowLayoutType;
+pub use nuklear_sys::nk_panel_type as PanelType;
+pub use nuklear_sys::nk_plugin_copy as PluginCopy;
+pub use nuklear_sys::nk_plugin_filter as PluginFilter;
+pub use nuklear_sys::nk_plugin_paste as PluginPaste;
 pub use nuklear_sys::nk_popup_buffer as PopupBuffer;
 pub use nuklear_sys::nk_rect as Rect;
 pub use nuklear_sys::nk_recti as Recti;
 pub use nuklear_sys::nk_scroll as Scroll;
 pub use nuklear_sys::nk_size as Size;
+pub use nuklear_sys::nk_style_colors as StyleColor;
+pub use nuklear_sys::nk_style_cursor as StyleCursor;
+pub use nuklear_sys::nk_style_header_align as StyleHeaderAlign;
 pub use nuklear_sys::nk_style_text as StyleText;
 pub use nuklear_sys::nk_vec2 as Vec2;
 pub use nuklear_sys::nk_vec2i as Vec2i;
+pub use nuklear_sys::nk_widget_layout_states as WidgetLayoutState;
 
-pub use nuklear_sys::nk_glyph as Glyph;
-
-pub use nuklear_sys::nk_plugin_copy as PluginCopy;
-pub use nuklear_sys::nk_plugin_filter as PluginFilter;
-pub use nuklear_sys::nk_plugin_paste as PluginPaste;
+#[cfg(feature = "rust_allocator")]
+mod alloc_heap;
+mod alloc_vec;
 
 pub const NK_FILTER_DEFAULT: PluginFilter = Some(nk_filter_default);
 pub const NK_FILTER_ASCII: PluginFilter = Some(nk_filter_ascii);
