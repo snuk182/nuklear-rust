@@ -138,6 +138,14 @@ macro_rules! from_into_enum {
 
 // ==========================================================================================================
 
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
+pub struct Vector2<T> {
+    pub x: T,
+    pub y: T,
+}
+
+// ==========================================================================================================
+
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CommandType {
@@ -3661,6 +3669,7 @@ impl FontAtlas {
 pub struct FontIterator<'a> {
     ctx: &'a FontAtlas,
 }
+
 impl<'a> IntoIterator for FontIterator<'a> {
     type Item = &'a Font;
     type IntoIter = FontIntoIter<'a>;
@@ -3670,9 +3679,11 @@ impl<'a> IntoIterator for FontIterator<'a> {
         FontIntoIter { font }
     }
 }
+
 pub struct FontIntoIter<'a> {
     font: Option<&'a Font>,
 }
+
 impl<'a> Iterator for FontIntoIter<'a> {
     type Item = &'a Font;
     fn next(&mut self) -> Option<&'a Font> {
@@ -3893,6 +3904,16 @@ impl Context {
         unsafe { nk_window_get_bounds(&self.internal as *const nk_context) }
     }
 
+    pub fn window_get_scroll(&mut self) -> Vector2<u32> {
+        unsafe {
+            let mut x: nk_uint = 0;
+            let mut y: nk_uint = 0;
+            nk_window_get_scroll(&mut self.internal as *mut nk_context, &mut x, &mut y);
+
+            Vector2 { x: x as u32, y: y as u32 }
+        }
+    }
+
     pub fn window_get_size(&self) -> Vec2 {
         unsafe { nk_window_get_size(&self.internal as *const nk_context) }
     }
@@ -4010,6 +4031,12 @@ impl Context {
     pub fn window_set_position<S: AsRef<str>>(&mut self, name: S, pos: Vec2) {
         unsafe {
             nk_window_set_position(&mut self.internal as *mut nk_context, name.as_ref().as_ptr() as *const i8, pos);
+        }
+    }
+
+    pub fn window_set_scroll(&mut self, scroll: Vector2<u32>) {
+        unsafe {
+            nk_window_set_scroll(&mut self.internal as *mut nk_context, scroll.x, scroll.y);
         }
     }
 
@@ -4135,6 +4162,22 @@ impl Context {
 
     pub fn group_begin(&mut self, title: String, flags: Flags) -> i32 {
         unsafe { nk_group_begin(&mut self.internal as *mut nk_context, title.as_ptr(), flags) }
+    }
+
+    pub fn group_get_scroll<S: AsRef<str>>(&mut self, id: S) -> Vector2<u32> {
+        unsafe {
+            let mut x: nk_uint = 0;
+            let mut y: nk_uint = 0;
+            nk_group_get_scroll(&mut self.internal as *mut nk_context, id.as_ref().as_ptr() as *const ::std::os::raw::c_char, &mut x, &mut y);
+
+            Vector2 { x: x as u32, y: y as u32 }
+        }
+    }
+
+    pub fn group_set_scroll<S: AsRef<str>>(&mut self, id: S, scroll: Vector2<u32>) {
+        unsafe {
+            nk_group_set_scroll(&mut self.internal as *mut nk_context, id.as_ref().as_ptr() as *const ::std::os::raw::c_char, scroll.x, scroll.y);
+        }
     }
 
     pub fn group_end(&mut self) {
@@ -4480,6 +4523,22 @@ impl Context {
 
     pub fn popup_begin(&mut self, ty: PopupType, title: String, flags: Flags, bounds: Rect) -> bool {
         unsafe { nk_popup_begin(&mut self.internal as *mut nk_context, ty.into(), title.as_ptr(), flags, bounds) > 0 }
+    }
+
+    pub fn popup_get_scroll(&mut self) -> Vector2<u32> {
+        unsafe {
+            let mut x: nk_uint = 0;
+            let mut y: nk_uint = 0;
+            nk_popup_get_scroll(&mut self.internal as *mut nk_context, &mut x, &mut y);
+
+            Vector2 { x: x as u32, y: y as u32 }
+        }
+    }
+
+    pub fn popup_set_scroll(&mut self, scroll: Vector2<u32>) {
+        unsafe {
+            nk_popup_set_scroll(&mut self.internal as *mut nk_context, scroll.x, scroll.y);
+        }
     }
 
     pub fn popup_close(&mut self) {
