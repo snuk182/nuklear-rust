@@ -1,6 +1,6 @@
 [package]
 name = "nuklear-sys"
-version = "4.1.3"
+version = "4.6.0"
 authors = ["Serhii Plyhun <snuk188@gmail.com>"]
 description = "Raw bindings to Nuklear 2D GUI library"
 homepage = "https://github.com/snuk182/nuklear-rust"
