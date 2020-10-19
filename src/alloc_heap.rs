@@ -10,7 +10,7 @@ use std::mem;
 use std::os::raw::c_void;
 use std::ptr::NonNull;
 
-pub unsafe extern "C" fn alloc(_: nk_handle, _: *mut c_void, size: nk_size) -> *mut c_void {
+pub unsafe extern "C" fn alloc(_unused: nk_handle, _old: *mut c_void, size: nk_size) -> *mut c_void {
     trace!("allocating {} bytes", size);
 
     let size_size = mem::size_of::<nk_size>();
@@ -24,7 +24,7 @@ pub unsafe extern "C" fn alloc(_: nk_handle, _: *mut c_void, size: nk_size) -> *
     memory.as_ptr().offset(size_size as isize) as *mut c_void
 }
 
-pub unsafe extern "C" fn free(_: nk_handle, old: *mut c_void) {
+pub unsafe extern "C" fn free(_unused: nk_handle, old: *mut c_void) {
     if old.is_null() {
         return;
     }
