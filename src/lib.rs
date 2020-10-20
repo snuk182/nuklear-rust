@@ -93,7 +93,7 @@ macro_rules! wrapper_impls {
 macro_rules! wrapper_type {
     ($name:ident, $typ:ty) => {
         #[derive(Clone)]
-        #[repr(C)]
+        #[repr(transparent)]
         pub struct $name {
             internal: $typ,
         }
@@ -104,7 +104,7 @@ macro_rules! wrapper_type {
 
 macro_rules! wrapper_type_no_clone {
     ($name:ident, $typ:ty) => {
-        #[repr(C)]
+        #[repr(transparent)]
         pub struct $name {
             internal: $typ,
         }
@@ -3777,6 +3777,7 @@ impl Buffer {
 
 // =============================================================================================
 
+#[repr(transparent)]
 pub struct Context {
     internal: nk_context,
 }
